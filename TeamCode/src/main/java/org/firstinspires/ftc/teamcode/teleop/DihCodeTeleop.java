@@ -10,7 +10,7 @@ import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
 
 import java.util.List;
 
-@TeleOp
+@TeleOp(name = "DihCodeTeleop", group = "TeleOp")
 public class DihCodeTeleop extends OpMode {
     Drive drive;
     Transport transport;
@@ -22,7 +22,7 @@ public class DihCodeTeleop extends OpMode {
 
     @Override
     public void init() {
-        GlobalVars.isAuto = false;
+        GlobalVars.inAuto = false;
         drive = new Drive(hardwareMap, true, 0);
         transport = new Transport(hardwareMap);
 
