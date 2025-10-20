@@ -1,16 +1,16 @@
 package org.firstinspires.ftc.teamcode.teleop.systems;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.inAuto;
+import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isAuto;
 import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.isRed;
 
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.hardware.motors.MotorEx;
-import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.teleop.utils.Toggle;
@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.teleop.utils.Toggle;
 
 public class Transport {
     public Toggle intakeToggle, redToggle, manualMode;
-    private CRServoImplEx transfer;
+    private ServoImplEx gate;
     public static DcMotorEx intake;
 
     public static MotorEx shooter;
@@ -31,14 +31,14 @@ public class Transport {
 
     //SERVO POSITIONS
 
-    public double transferPower;
+    public double gatePos;
 
     //SERVO VALUES
     public static double openGate = .115;
 
     public static double closeGate = .163;
     //MOTOR POWER
-    public static double intakePower;
+    public static double intakePower, shooterPower;
 
     //MOTOR VELOCITY
 
@@ -59,8 +59,6 @@ public class Transport {
     //USEFUL STATES
 
     public final double dormant = 0;
-
-    public final double transferring = .7;
     public final double intaking = 1;
 
     public final double outtaking = -.35;
@@ -69,7 +67,7 @@ public class Transport {
 
     public final double shootingMed = 900;
 
-    public final double shootingShort = 700;
+    public final double shootingShort = 600;
 
     //FSMs:
     public enum RicoTransport {
@@ -88,7 +86,7 @@ public class Transport {
     public RicoTransport ricoTransport = RicoTransport.HOME;
 
     //Fire Ready?
-    public static double fireTolerance = 150;
+    public static double fireTolerance = 120;
     public boolean inRange(double currentVelocity, double targetVelocity) {
         if (Math.abs(targetVelocity - currentVelocity) < fireTolerance) {
             return true;
@@ -121,18 +119,18 @@ public class Transport {
         shooter = new MotorEx(hardwareMap, "shooter", Motor.GoBILDA.RPM_1150);
         shooter.setRunMode(MotorEx.RunMode.RawPower);
 
-        transfer = hardwareMap.get(CRServoImplEx.class, "transfer");
+        gate = hardwareMap.get(ServoImplEx.class, "gate");
 
-        if (inAuto) { //TODO: Find Out How to Deal w Init: Remove All Mvmt in Init?
+        if (isAuto) { //TODO: Find Out How to Deal w Init: Remove All Mvmt in Init?
             intakePower = dormant;
             shooterVelocity = dormant;
             shooterVelocityTarget = dormant;
-            transfer.setPower(dormant);
+            gate.setPosition(closeGate);
         } else {
             intakePower = dormant;
             shooterVelocity = dormant;
             shooterVelocityTarget = dormant;
-            transfer.setPower(dormant);
+            gate.setPosition(closeGate);
         }
     }
 
@@ -143,37 +141,42 @@ public class Transport {
         shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget);
         shooter.set(shooterpid);
 
-        transfer.setPower(transferPower);
+        gate.setPosition(gatePos);
 
         switch (ricoTransport) {
             case HOME:
                 intakePower = dormant;
                 shooterVelocityTarget = dormant;
-                transferPower = dormant;
+                gatePos = closeGate;
+                break;
+            case INTAKE:
+                intakePower = intaking;
+                shooterVelocityTarget = dormant;
+                gatePos = closeGate;
                 break;
             case OUTTAKE:
                 intakePower = outtaking;
                 shooterVelocityTarget = dormant;
-                transferPower = outtaking;
+                gatePos = closeGate;
                 break;
             case POWER_SHOOTER_SHORT:
-                intakePower = intaking;
+                intakePower = dormant;
                 shooterVelocityTarget = shootingShort;
-                transferPower = dormant;
+                gatePos = closeGate;
                 break;
             case POWER_SHOOTER_MED:
-                intakePower = intaking;
+                intakePower = dormant;
                 shooterVelocityTarget = shootingMed;
-                transferPower = dormant;
+                gatePos = closeGate;
                 break;
             case POWER_SHOOTER_LONG:
-                intakePower = intaking;
+                intakePower = dormant;
                 shooterVelocityTarget = shootingLong;
-                transferPower = dormant;
+                gatePos = closeGate;
                 break;
             case SHOOT:
-                intakePower = intaking;
-                transferPower = transferring;
+                shooterVelocityTarget = intaking;
+                gatePos = openGate;
                 break;
             default:
                 ricoTransport = RicoTransport.HOME;
@@ -190,14 +193,14 @@ public class Transport {
         shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget);
         shooter.set(shooterpid);
 
-        transfer.setPower(transferPower);
+        gate.setPosition(gatePos);
 
         if (!manualMode.value()) {
             switch (ricoTransport) {
                 case HOME:
                     intakePower = dormant;
                     shooterVelocityTarget = dormant;
-                    transferPower = dormant;
+                    gatePos = closeGate;
                     if (gamepad1.b) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.OUTTAKE;
@@ -206,18 +209,19 @@ public class Transport {
                         shootWait.reset();
                         ricoTransport = RicoTransport.POWER_SHOOTER_SHORT;
                     }
-                    if (gamepad1.dpad_left) {
+                    if (gamepad1.right_bumper) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.POWER_SHOOTER_MED;
                     }
-                    if (gamepad1.dpad_up) {
+                    if (gamepad1.y) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.POWER_SHOOTER_LONG;
                     }
                     break;
                 case OUTTAKE:
                     intakePower = outtaking;
-                    transferPower = outtaking;
+                    shooterVelocityTarget = dormant;
+                    gatePos = closeGate;
                     if (shootWait.seconds() >= outtakeWait) {
                         ricoTransport = RicoTransport.HOME;
                     }
@@ -225,7 +229,8 @@ public class Transport {
                 case POWER_SHOOTER_SHORT:
                     intakePower = intaking;
                     shooterVelocityTarget = shootingShort;
-                    if (gamepad1.y && inRange(shooterVelocityTarget, shooterVelocity)) {
+                    gatePos = closeGate;
+                    if (gamepad1.left_bumper && inRange(shooterVelocityTarget, shooterVelocity)) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.SHOOT;
                     }
@@ -237,7 +242,8 @@ public class Transport {
                 case POWER_SHOOTER_MED:
                     intakePower = intaking;
                     shooterVelocityTarget = shootingMed;
-                    if (gamepad1.y && inRange(shooterVelocityTarget, shooterVelocity)) {
+                    gatePos = closeGate;
+                    if (gamepad1.left_bumper && inRange(shooterVelocityTarget, shooterVelocity)) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.SHOOT;
                     }
@@ -249,7 +255,8 @@ public class Transport {
                 case POWER_SHOOTER_LONG:
                     intakePower = intaking;
                     shooterVelocityTarget = shootingLong;
-                    if (gamepad1.y && inRange(shooterVelocityTarget, shooterVelocity)) {
+                    gatePos = closeGate;
+                    if (gamepad1.left_bumper && inRange(shooterVelocityTarget, shooterVelocity)) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.SHOOT;
                     }
@@ -259,7 +266,7 @@ public class Transport {
                     }
                     break;
                 case SHOOT:
-                    transferPower = transferring;
+                    gatePos = openGate;
                     break;
                 default:
                     ricoTransport = RicoTransport.HOME;
