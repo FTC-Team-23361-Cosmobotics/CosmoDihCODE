@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.teleop.utils.Toggle;
 
 public class Transport {
     public Toggle intakeToggle, redToggle, manualMode;
-    private CRServoImplEx transfer;
+    private DcMotor transfer;
     public static DcMotorEx intake;
 
     public static MotorEx shooter;
@@ -60,10 +60,10 @@ public class Transport {
 
     public final double dormant = 0;
 
-    public final double transferring = .7;
-    public final double intaking = 1;
+    public final double transferring = 200;
+    public final double intaking = 200;
 
-    public final double outtaking = -.35;
+    public final double outtaking = -200;
 
     public final double shootingLong = 1500;
 
@@ -121,7 +121,7 @@ public class Transport {
         shooter = new MotorEx(hardwareMap, "shooter", Motor.GoBILDA.RPM_1150);
         shooter.setRunMode(MotorEx.RunMode.RawPower);
 
-        transfer = hardwareMap.get(CRServoImplEx.class, "transfer");
+        transfer = hardwareMap.get(DcMotor.class, "transfer");
 
         if (inAuto) { //TODO: Find Out How to Deal w Init: Remove All Mvmt in Init?
             intakePower = dormant;
