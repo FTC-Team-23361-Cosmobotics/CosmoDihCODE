@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.teleop.utils.Toggle;
 
 public class Transport {
     public Toggle intakeToggle, redToggle, manualMode;
-    private CRServoImplEx transfer;
+    public static DcMotorEx transfer;
     public static DcMotorEx intake;
 
     public static MotorEx shooter;
@@ -26,7 +26,7 @@ public class Transport {
     //Shooter PID
     private PIDFController shooterController;
 
-    public final double shooterp = 0.00007, shooteri = .0000001, shooterd = .0000001, shooterf = .0006;
+    public final double shooterp = 0.01, shooteri = .0000001, shooterd = .00001, shooterf = .0007;
     public double shooterpid;
 
     //SERVO POSITIONS
@@ -53,7 +53,7 @@ public class Transport {
     //WAIT VALUES
     public static double fireWait = .5;
 
-    public static double outtakeWait = .5;
+    public static double outtakeWait = .05;
     public static double sheathWait = 2.5;
 
     //USEFUL STATES
@@ -63,13 +63,13 @@ public class Transport {
     public final double transferring = .7;
     public final double intaking = 1;
 
-    public final double outtaking = -.35;
+    public final double outtaking = -1;
 
-    public final double shootingLong = 1500;
+    public final double shootingLong = 780;
 
-    public final double shootingMed = 900;
+    public final double shootingMed = 600;
 
-    public final double shootingShort = 700;
+    public final double shootingShort = 500;
 
     //FSMs:
     public enum RicoTransport {
@@ -88,9 +88,9 @@ public class Transport {
     public RicoTransport ricoTransport = RicoTransport.HOME;
 
     //Fire Ready?
-    public static double fireTolerance = 150;
+    public static double fireTolerance = 100;
     public boolean inRange(double currentVelocity, double targetVelocity) {
-        if (Math.abs(targetVelocity - currentVelocity) < fireTolerance) {
+        if (currentVelocity > (targetVelocity - fireTolerance) ) {
             return true;
         } else {
             return false;
@@ -121,7 +121,7 @@ public class Transport {
         shooter = new MotorEx(hardwareMap, "shooter", Motor.GoBILDA.RPM_1150);
         shooter.setRunMode(MotorEx.RunMode.RawPower);
 
-        transfer = hardwareMap.get(CRServoImplEx.class, "transfer");
+        transfer = hardwareMap.get(DcMotorEx.class, "transfer");
 
         if (inAuto) { //TODO: Find Out How to Deal w Init: Remove All Mvmt in Init?
             intakePower = dormant;
@@ -136,14 +136,14 @@ public class Transport {
         }
     }
 
-    public void update() {
-        intake.setPower(intakePower);
+    public void update(double voltageMultiplier) {
+        intake.setPower(intakePower * voltageMultiplier);
 
         shooterVelocity = shooter.getVelocity();
-        shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget);
+        shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget) * voltageMultiplier;
         shooter.set(shooterpid);
 
-        transfer.setPower(transferPower);
+        transfer.setPower(transferPower * voltageMultiplier);
 
         switch (ricoTransport) {
             case HOME:
@@ -159,17 +159,17 @@ public class Transport {
             case POWER_SHOOTER_SHORT:
                 intakePower = intaking;
                 shooterVelocityTarget = shootingShort;
-                transferPower = dormant;
+                transferPower = outtaking;
                 break;
             case POWER_SHOOTER_MED:
                 intakePower = intaking;
                 shooterVelocityTarget = shootingMed;
-                transferPower = dormant;
+                transferPower = outtaking;
                 break;
             case POWER_SHOOTER_LONG:
                 intakePower = intaking;
                 shooterVelocityTarget = shootingLong;
-                transferPower = dormant;
+                transferPower = outtaking;
                 break;
             case SHOOT:
                 intakePower = intaking;
@@ -181,16 +181,16 @@ public class Transport {
     }
 
 
-    public void update(Gamepad gamepad1, Gamepad gamepad2) {
-        manualMode.update(gamepad2.back);
+    public void update(Gamepad gamepad1, Gamepad gamepad2, double voltageMultiplier) {
+//        manualMode.update(gamepad2.share);
 
-        intake.setPower(intakePower);
+        intake.setPower(intakePower * voltageMultiplier);
 
         shooterVelocity = shooter.getVelocity();
-        shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget);
+        shooterpid = shooterController.calculate(shooterVelocity, shooterVelocityTarget) * voltageMultiplier;
         shooter.set(shooterpid);
 
-        transfer.setPower(transferPower);
+        transfer.setPower(transferPower * voltageMultiplier);
 
         if (!manualMode.value()) {
             switch (ricoTransport) {
@@ -198,11 +198,11 @@ public class Transport {
                     intakePower = dormant;
                     shooterVelocityTarget = dormant;
                     transferPower = dormant;
-                    if (gamepad1.b) {
+                    if (gamepad1.circle) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.OUTTAKE;
                     }
-                    if (gamepad1.x) {
+                    if (gamepad1.cross) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.POWER_SHOOTER_SHORT;
                     }
@@ -218,18 +218,25 @@ public class Transport {
                 case OUTTAKE:
                     intakePower = outtaking;
                     transferPower = outtaking;
-                    if (shootWait.seconds() >= outtakeWait) {
+                    if (!gamepad1.circle) {
                         ricoTransport = RicoTransport.HOME;
                     }
                     break;
                 case POWER_SHOOTER_SHORT:
                     intakePower = intaking;
                     shooterVelocityTarget = shootingShort;
-                    if (gamepad1.y && inRange(shooterVelocityTarget, shooterVelocity)) {
+                    transferPower = outtaking;
+                    if (gamepad1.triangle && inRange(shooterVelocity, shooterVelocityTarget)) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.SHOOT;
                     }
-                    if (gamepad1.b) {
+                    if (gamepad1.dpad_left) {
+                        ricoTransport = RicoTransport.POWER_SHOOTER_MED;
+                    }
+                    if (gamepad1.dpad_up) {
+                        ricoTransport = RicoTransport.POWER_SHOOTER_LONG;
+                    }
+                    if (gamepad1.circle) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.OUTTAKE;
                     }
@@ -237,11 +244,18 @@ public class Transport {
                 case POWER_SHOOTER_MED:
                     intakePower = intaking;
                     shooterVelocityTarget = shootingMed;
-                    if (gamepad1.y && inRange(shooterVelocityTarget, shooterVelocity)) {
+                    transferPower = outtaking;
+                    if (gamepad1.triangle && inRange(shooterVelocity, shooterVelocityTarget)) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.SHOOT;
                     }
-                    if (gamepad1.b) {
+                    if (gamepad1.cross) {
+                        ricoTransport = RicoTransport.POWER_SHOOTER_SHORT;
+                    }
+                    if (gamepad1.dpad_up) {
+                        ricoTransport = RicoTransport.POWER_SHOOTER_LONG;
+                    }
+                    if (gamepad1.circle) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.OUTTAKE;
                     }
@@ -249,17 +263,28 @@ public class Transport {
                 case POWER_SHOOTER_LONG:
                     intakePower = intaking;
                     shooterVelocityTarget = shootingLong;
-                    if (gamepad1.y && inRange(shooterVelocityTarget, shooterVelocity)) {
+                    transferPower = outtaking;
+                    if (gamepad1.triangle && inRange(shooterVelocity, shooterVelocityTarget)) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.SHOOT;
                     }
-                    if (gamepad1.b) {
+                    if (gamepad1.cross) {
+                        ricoTransport = RicoTransport.POWER_SHOOTER_SHORT;
+                    }
+                    if (gamepad1.dpad_left) {
+                        ricoTransport = RicoTransport.POWER_SHOOTER_MED;
+                    }
+                    if (gamepad1.circle) {
                         shootWait.reset();
                         ricoTransport = RicoTransport.OUTTAKE;
                     }
                     break;
                 case SHOOT:
-                    transferPower = transferring;
+                    if (inRange(shooterVelocity, shooterVelocityTarget)) {
+                        transferPower = transferring;
+                    } else {
+                        transferPower = outtaking;
+                    }
                     break;
                 default:
                     ricoTransport = RicoTransport.HOME;
@@ -267,9 +292,13 @@ public class Transport {
 
             }
 
-            if (gamepad1.a && ricoTransport != ricoTransport.HOME) {
-                ricoTransport = ricoTransport.HOME;
+            if (gamepad1.square && ricoTransport != RicoTransport.HOME) {
+                ricoTransport = RicoTransport.HOME;
                 intakeToggle.value = false;
+            }
+
+            if (gamepad2.x && ricoTransport != RicoTransport.SHOOT) {
+                ricoTransport = RicoTransport.SHOOT;
             }
 
         } else {

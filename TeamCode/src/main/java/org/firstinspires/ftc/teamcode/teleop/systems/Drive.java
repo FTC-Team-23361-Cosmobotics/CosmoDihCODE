@@ -62,7 +62,7 @@ public class Drive {
         // Adjust the orientation parameters to match your robot
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
+                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD));
         // Without this, the REV Hub's orientation is assumed to be logo up / USB forward
         imu.initialize(parameters);
         imu.resetYaw();
@@ -70,18 +70,18 @@ public class Drive {
         botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
         targetHeading = botHeading;
-        RobotCentric = robotCentric;
+        this.RobotCentric = robotCentric;
 
         IMUOffset = offsetIMU;
     }
 
-    public void update(Gamepad gamepad1, Gamepad gamepad2) {
-        if (RobotCentric == false) {
+    public void update(Gamepad gamepad1, Gamepad gamepad2, double voltageMultiplier) {
+        if (!RobotCentric) {
             botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS) + Math.toRadians(IMUOffset);
             //Field Centric Drive:
             double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
             double x = gamepad1.left_stick_x;
-            double rx = gamepad1.right_stick_x / 2;
+            double rx = gamepad1.right_stick_x;
 //            if (rx == 0){
 //                rx = calcRotBasedOnIdeal(botHeading, targetHeading);
 //            }
@@ -91,7 +91,7 @@ public class Drive {
             // Rotate the movement direction counter to the bot's rotation
             double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
             double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
-            rotX = rotX * 1.1;  // Counteract imperfect strafing
+            rotX = rotX * 1.2;  // Counteract imperfect strafing
             // Denominator is the largest motor power (absolute value) or 1
             // This ensures all the powers maintain the same ratio,
             // but only if at least one is out of the range [-1, 1]
@@ -110,10 +110,10 @@ public class Drive {
 //                    rx = calcRotBasedOnIdeal(botHeading, Math.toRadians(325));
 //            }
 
-            double frontLeftPower = (rotY + rotX + rx) / denominator;
-            double backLeftPower = (rotY - rotX + rx) / denominator;
-            double frontRightPower = (rotY - rotX - rx) / denominator;
-            double backRightPower = (rotY + rotX - rx) / denominator;
+            double frontLeftPower = (rotY + rotX + rx) / denominator * voltageMultiplier;
+            double backLeftPower = (rotY - rotX + rx) / denominator * voltageMultiplier;
+            double frontRightPower = (rotY - rotX - rx) / denominator * voltageMultiplier;
+            double backRightPower = (rotY + rotX - rx) / denominator * voltageMultiplier;
 
             frontLeft.setPower(frontLeftPower);
             backLeft.setPower(backLeftPower);
@@ -122,14 +122,14 @@ public class Drive {
             // This button choice was made so that it is hard to hit on accident,
             // it can be freely changed based on preference.
             //Reset IMU:
-            if (gamepad1.back) {
+            if (gamepad1.share) {
                 resetImu();
             }
         } else {
 //            botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
             double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
-            double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
-            double rx = ((gamepad1.right_stick_x) * 3/5);
+            double x = gamepad1.left_stick_x * 1.2; // Counteract imperfect strafing
+            double rx = (gamepad1.right_stick_x);
 //            if (rx == 0){
 //                rx = calcRotBasedOnIdeal(botHeading, targetHeading);
 //            }
@@ -148,10 +148,10 @@ public class Drive {
 //                denominator *= 2;
 //            }
 
-            double frontLeftPower = (y + x + rx) / denominator;
-            double backLeftPower = (y - x + rx) / denominator;
-            double frontRightPower = (y - x - rx) / denominator;
-            double backRightPower = (y + x - rx) / denominator;
+            double frontLeftPower = (y + x + rx) / denominator * voltageMultiplier;
+            double backLeftPower = (y - x + rx) / denominator * voltageMultiplier;
+            double frontRightPower = (y - x - rx) / denominator * voltageMultiplier;
+            double backRightPower = (y + x - rx) / denominator * voltageMultiplier;
 
             frontLeft.setPower(frontLeftPower);
             backLeft.setPower(backLeftPower);

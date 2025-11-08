@@ -8,14 +8,17 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 import org.firstinspires.ftc.teamcode.teleop.systems.Transport;
 import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
 
-@Autonomous(name = "RedGoalAuto", group = "Auto")
-public class RedGoalAuto extends OpMode {
+@Autonomous(name = "RedGoalAuto: Nine Artifacts", group = "GoalAuto")
+public class RedGoalNineAuto extends OpMode {
+    private VoltageSensor voltageSensor;
     private Follower follower;
 
     private Transport transport;
@@ -23,13 +26,17 @@ public class RedGoalAuto extends OpMode {
     private int pathState;
 
 
-    /** SPIKE COORDINATES **/
-    private final double spikeX = 125, highSpikeY = 84, midSpikeY = 60, lowSpikeY = 36;
-    private final double startHeading = Math.toRadians(45);
+    /** POSE COORDINATES **/
+    public static double spikeX = 132, highSpikeY = 80, midSpikeY = 60, lowSpikeY = 34;
+    public static double startX = 124, startY = 122, startHeading = Math.toRadians(45);
+    public static double scoreX = 106, scoreY = 106, scoreHeading = Math.toRadians(45);
 
-    /** START AND SCORE POSES **/
-    private final Pose startPose = new Pose(124, 122); // Start Pose of our robot.
-    private final Pose scorePose = new Pose(102, 102); // Scoring Pose of our robot. It is facing the goal at a 135 degree angle.
+    public static double parkX = 108, parkY = 72, parkHeading = Math.toRadians(0);
+
+    /** START, SCORE, AND PARK POSES **/
+    private final Pose startPose = new Pose(startX, startY, startHeading); // Start Pose of our robot.
+    private final Pose scorePose = new Pose(scoreX, scoreY, scoreHeading); // Scoring Pose of our robot. It is facing the goal at a 135 degree angle.
+    private final Pose parkPose = new Pose(parkX, parkY, parkHeading);
 
 
     /** SPIKE CONTROL POINTS **/
@@ -40,11 +47,13 @@ public class RedGoalAuto extends OpMode {
     private final Pose lowSpikeControlPtLowPose = new Pose(72, lowSpikeY);
 
     /** SPIKE POSES **/
-    private final Pose highSpikePose = new Pose(spikeX, highSpikeY); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose midSpikePose = new Pose(spikeX, midSpikeY); // Middle (Second Set) of Artifacts from the Spike Mark.
-    private final Pose lowSpikePose = new Pose(spikeX, lowSpikeY); // Lowest (Third Set) of Artifacts from the Spike Mark.
+    private final Pose highSpikePose = new Pose(spikeX + 2, highSpikeY + 2, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
+    private final Pose midSpikePose = new Pose(spikeX + 12.5, midSpikeY, Math.toRadians(180)); // Middle (Second Set) of Artifacts from the Spike Mark.
+    private final Pose lowSpikePose = new Pose(spikeX, lowSpikeY, Math.toRadians(180)); // Lowest (Third Set) of Artifacts from the Spike Mark.
 
-    private PathChain scorePreload, grabPPG, scorePPG, grabPGP, scorePGP, grabGPP, scoreGPP;
+    /** PATH CHAINS **/
+
+    private PathChain scorePreload, grabPPG, scorePPG, grabPGP, scorePGP, grabGPP, scoreGPP, leaveZone;
     public void buildPaths() {
 
         scorePreload = follower.pathBuilder()
@@ -55,26 +64,34 @@ public class RedGoalAuto extends OpMode {
         grabPPG = follower.pathBuilder()
                 .addPath(new BezierCurve(scorePose, highSpikeControlPtPose, highSpikePose))
                 .setTangentHeadingInterpolation()
+                .setReversed()
                 .build();
 
         scorePPG = follower.pathBuilder()
                 .addPath(new BezierCurve(highSpikePose, highSpikeControlPtPose, scorePose))
-                .setTangentHeadingInterpolation()
+                .setLinearHeadingInterpolation(highSpikePose.getHeading(), scorePose.getHeading() - Math.toRadians(7))
                 .build();
 
         grabPGP = follower.pathBuilder()
                 .addPath(new BezierCurve(scorePose, midSpikeControlPtPose, midSpikePose))
                 .setTangentHeadingInterpolation()
+                .setReversed()
                 .build();
 
         scorePGP = follower.pathBuilder()
-                .addPath(new BezierCurve(midSpikePose, midSpikeControlPtPose, scorePose))
-                .setTangentHeadingInterpolation()
+                .addPath(new BezierCurve(midSpikePose, midSpikeControlPtPose, new Pose(99, 108, Math.toRadians(38))))
+                .setLinearHeadingInterpolation(midSpikePose.getHeading(), Math.toRadians(38))
+                .build();
+
+        leaveZone = follower.pathBuilder()
+                .addPath(new BezierCurve(scorePose, parkPose))
+                .setLinearHeadingInterpolation(scoreHeading, parkHeading)
                 .build();
 
         grabGPP = follower.pathBuilder()
                 .addPath(new BezierCurve(scorePose, lowSpikeControlPtHighPose, lowSpikeControlPtLowPose, lowSpikePose))
                 .setTangentHeadingInterpolation()
+                .setReversed()
                 .build();
 
         scoreGPP = follower.pathBuilder()
@@ -83,13 +100,11 @@ public class RedGoalAuto extends OpMode {
                 .build();
     }
 
-    /* You could check for
-            - Follower State: "if(!follower.isBusy()) {}"
-            - Time: "if(pathTimer.getElapsedTimeSeconds() > 1) {}"
-            - Robot Position: "if(follower.getPose().getX() > 36) {}"
-    */
+    private final double shootPreloadWait = 2;
 
-    private final double shootWait = 1.5;
+
+    private final double shootIntakedWait = 1.5;
+    private final double intakeWait = .1;
 
     public void autonomousPathUpdate() {
         switch (pathState) {
@@ -100,12 +115,16 @@ public class RedGoalAuto extends OpMode {
                 break;
             case 1:
                 if (!follower.isBusy()) {
-                    transport.ricoTransport = Transport.RicoTransport.SHOOT;
                     setPathState(2);
                 }
                 break;
             case 2:
-                if (pathTimer.getElapsedTimeSeconds() > shootWait) {
+                if (transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
+                    transport.ricoTransport = Transport.RicoTransport.SHOOT;
+                } else {
+                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
+                }
+                if (pathTimer.getElapsedTimeSeconds() > (shootPreloadWait * 12 / voltageSensor.getVoltage())) {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                     follower.followPath(grabPPG,true);
                     setPathState(3);
@@ -113,56 +132,62 @@ public class RedGoalAuto extends OpMode {
                 break;
             case 3:
                 if (!follower.isBusy()) {
-                    follower.followPath(scorePPG,true);
                     setPathState(4);
                 }
                 break;
             case 4:
-                if (!follower.isBusy()) {
-                    transport.ricoTransport = Transport.RicoTransport.SHOOT;
+                if (pathTimer.getElapsedTimeSeconds() > intakeWait) {
+                    follower.followPath(scorePPG,true);
                     setPathState(5);
                 }
                 break;
             case 5:
-                if (pathTimer.getElapsedTimeSeconds() > shootWait) {
-                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
-                    follower.followPath(grabPGP,true);
+                if (!follower.isBusy()) {
                     setPathState(6);
                 }
                 break;
             case 6:
-                if (!follower.isBusy()) {
-                    follower.followPath(scorePGP,true);
+                if (transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
+                    transport.ricoTransport = Transport.RicoTransport.SHOOT;
+                } else {
+                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
+                }
+                if (pathTimer.getElapsedTimeSeconds() > (shootIntakedWait * 12 / voltageSensor.getVoltage())) {
+                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
+                    follower.followPath(grabPGP,true);
                     setPathState(7);
                 }
                 break;
             case 7:
                 if (!follower.isBusy()) {
-                    transport.ricoTransport = Transport.RicoTransport.SHOOT;
                     setPathState(8);
                 }
                 break;
             case 8:
-                if (pathTimer.getElapsedTimeSeconds() > shootWait) {
-                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
-                    follower.followPath(grabGPP,true);
+                if (pathTimer.getElapsedTimeSeconds() > intakeWait) {
+                    follower.followPath(scorePGP,true);
                     setPathState(9);
                 }
                 break;
             case 9:
                 if (!follower.isBusy()) {
-                    follower.followPath(scoreGPP, true);
                     setPathState(10);
                 }
                 break;
             case 10:
-                if (!follower.isBusy()) {
+                if (transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
                     transport.ricoTransport = Transport.RicoTransport.SHOOT;
+                } else {
+                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
+                }
+                if (pathTimer.getElapsedTimeSeconds() > (shootIntakedWait * 12 / voltageSensor.getVoltage())) {
+                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
+                    follower.followPath(leaveZone,true);
                     setPathState(11);
                 }
                 break;
             case 11:
-                if (pathTimer.getElapsedTimeSeconds() > shootWait) {
+                if (!follower.isBusy()) {
                     transport.ricoTransport = Transport.RicoTransport.HOME;
                     setPathState(-1);
                 }
@@ -181,6 +206,7 @@ public class RedGoalAuto extends OpMode {
     public void init() {
         GlobalVars.isRed = true;
         GlobalVars.inAuto = true;
+        voltageSensor = hardwareMap.voltageSensor.iterator().next();
         transport = new Transport(hardwareMap);
         pathTimer = new Timer();
         opmodeTimer = new Timer();
@@ -208,7 +234,7 @@ public class RedGoalAuto extends OpMode {
     @Override
     public void loop() {
         // These loop the movements of the robot, these must be called continuously in order to work
-        transport.update();
+        transport.update(12 / voltageSensor.getVoltage());
         follower.update();
         autonomousPathUpdate();
 
@@ -217,6 +243,14 @@ public class RedGoalAuto extends OpMode {
         telemetry.addData("X", follower.getPose().getX());
         telemetry.addData("Y", follower.getPose().getY());
         telemetry.addData("Heading", follower.getPose().getHeading());
+        telemetry.addData("Flywheel Velocity", Transport.shooterVelocity);
+        telemetry.addData("Flywheel Target Velocity", Transport.shooterVelocityTarget);
+        telemetry.addData("Flywheel Fire Tolerance", Transport.fireTolerance);
+        telemetry.addData("Flywheel Ready", transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget));
+        telemetry.addData("Voltage", voltageSensor.getVoltage());
+        telemetry.addData("Voltage Multiplier", 12 / voltageSensor.getVoltage());
+        telemetry.addData("Intake Power", Transport.intake.getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("Transfer Power", Transport.transfer.getCurrent(CurrentUnit.AMPS));
         telemetry.update();
     }
 
