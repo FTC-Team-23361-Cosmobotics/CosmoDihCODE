@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Transport;
 import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
 
-@Autonomous(name = "BlueGoalAuto: Nine Artifacts", group = "GoalAuto")
+@Autonomous(name = "BlueGoalAuto: Nine Artifacts", group = "GoalAuto", preselectTeleOp = "DihCodeTeleop")
 public class BlueGoalNineAuto extends OpMode {
     private VoltageSensor voltageSensor;
     private Follower follower;
@@ -29,7 +29,7 @@ public class BlueGoalNineAuto extends OpMode {
     /** POSE COORDINATES **/
     private final double spikeX = 12, highSpikeY = 80, midSpikeY = 55, lowSpikeY = 36;
     public static double startX = 20, startY = 122, startHeading = Math.toRadians(135);
-    public static double scoreX = 43, scoreY = 107, scoreHeading = Math.toRadians(135);
+    public static double scoreX = 32, scoreY = 104, scoreHeading = Math.toRadians(135);
     public static double parkX = 36, parkY = 72, parkHeading = Math.toRadians(180);
 
     /** START, SCORE, AND PARK POSES **/
@@ -47,7 +47,7 @@ public class BlueGoalNineAuto extends OpMode {
 
     /** SPIKE POSES **/
     private final Pose highSpikePose = new Pose(spikeX, highSpikeY, Math.toRadians(0)); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose midSpikePose = new Pose(spikeX - 10, midSpikeY, Math.toRadians(0)); // Middle (Second Set) of Artifacts from the Spike Mark.
+    private final Pose midSpikePose = new Pose(spikeX - 11.5, midSpikeY, Math.toRadians(0)); // Middle (Second Set) of Artifacts from the Spike Mark.
     private final Pose lowSpikePose = new Pose(spikeX, lowSpikeY, Math.toRadians(0)); // Lowest (Third Set) of Artifacts from the Spike Mark.
 
     /** PATH CHAINS **/
@@ -77,8 +77,8 @@ public class BlueGoalNineAuto extends OpMode {
                 .build();
 
         scorePGP = follower.pathBuilder()
-                .addPath(new BezierCurve(midSpikePose, midSpikeControlPtPose, new Pose(scorePose.getX() + 3.5, scorePose.getY() - 3.5, scorePose.getHeading() + Math.toRadians(7))))
-                .setLinearHeadingInterpolation(midSpikePose.getHeading(), scorePose.getHeading() + Math.toRadians(7))
+                .addPath(new BezierCurve(midSpikePose, midSpikeControlPtPose, scorePose))
+                .setLinearHeadingInterpolation(midSpikePose.getHeading(), scoreHeading)
                 .build();
 
         leaveZone = follower.pathBuilder()
@@ -88,20 +88,20 @@ public class BlueGoalNineAuto extends OpMode {
 
         grabGPP = follower.pathBuilder()
                 .addPath(new BezierCurve(scorePose, lowSpikeControlPtHighPose, lowSpikeControlPtLowPose, lowSpikePose))
-                .setTangentHeadingInterpolation()
-                .setReversed()
+                .setLinearHeadingInterpolation(scoreHeading, lowSpikePose.getHeading())
                 .build();
 
         scoreGPP = follower.pathBuilder()
                 .addPath(new BezierCurve(lowSpikePose, lowSpikeControlPtLowPose, lowSpikeControlPtHighPose, scorePose))
-                .setTangentHeadingInterpolation()
+                .setLinearHeadingInterpolation(lowSpikePose.getHeading(), scoreHeading)
                 .build();
     }
 
     private final double shootPreloadWait = 2;
 
-    private final double shootIntakedWait = 1.5;
+    private final double shootIntakedWait = 1.75;
     private final double intakeWait = .1;
+    private final double shootBuffer = .5;
 
     public void autonomousPathUpdate() {
         switch (pathState) {
@@ -116,7 +116,7 @@ public class BlueGoalNineAuto extends OpMode {
                 }
                 break;
             case 2:
-                if (transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
+                if (pathTimer.getElapsedTimeSeconds() > shootBuffer && transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
                     transport.ricoTransport = Transport.RicoTransport.SHOOT;
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
@@ -144,7 +144,7 @@ public class BlueGoalNineAuto extends OpMode {
                 }
                 break;
             case 6:
-                if (transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
+                if (pathTimer.getElapsedTimeSeconds() > shootBuffer && transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
                     transport.ricoTransport = Transport.RicoTransport.SHOOT;
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
@@ -172,7 +172,7 @@ public class BlueGoalNineAuto extends OpMode {
                 }
                 break;
             case 10:
-                if ((pathTimer.getElapsedTimeSeconds() > .25) && transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
+                if (pathTimer.getElapsedTimeSeconds() > shootBuffer && transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
                     transport.ricoTransport = Transport.RicoTransport.SHOOT;
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;

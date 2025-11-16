@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Transport;
 import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
 
-@Autonomous(name = "RedGoalAuto: Twelve Artifacts", group = "GoalAuto")
+@Autonomous(name = "RedGoalAuto: Twelve Artifacts", group = "GoalAuto", preselectTeleOp = "DihCodeTeleop")
 public class RedGoalTwelveAuto extends OpMode {
     private VoltageSensor voltageSensor;
     private Follower follower;
@@ -27,12 +27,12 @@ public class RedGoalTwelveAuto extends OpMode {
 
 
     /** POSE COORDINATES **/
-    public static double spikeX = 132, highSpikeY = 80, midSpikeY = 60, lowSpikeY = 34;
+    public static double spikeX = 132, highSpikeY = 81, midSpikeY = 58, lowSpikeY = 34;
     public static double startX = 124, startY = 122, startHeading = Math.toRadians(45);
-    public static double scoreX = 106, scoreY = 106, scoreHeading = Math.toRadians(45);
+    public static double scoreX = 108, scoreY = 108, scoreHeading = Math.toRadians(45);
 
-    public static double parkX = 108, parkY = 72, parkHeading = Math.toRadians(0);
-    public static double gateX = 129, gateY = 76, gateHeading = Math.toRadians(180);
+    public static double parkX = 126, parkY = 96, parkHeading = Math.toRadians(0);
+    public static double gateX = 131, gateY = 74, gateHeading = Math.toRadians(180);
 
     /** START, SCORE, GATE, AND PARK POSES **/
     private final Pose startPose = new Pose(startX, startY, startHeading); // Start Pose of our robot.
@@ -42,7 +42,7 @@ public class RedGoalTwelveAuto extends OpMode {
 
 
     /** CONTROL POINTS **/
-    private final Pose gateControlPtPose = new Pose(100, 80);
+    private final Pose gateControlPtPose = new Pose(104, 78);
     private final Pose highSpikeControlPtPose = new Pose(85, highSpikeY);
     private final Pose midSpikeControlPtPose = new Pose(64, midSpikeY);
 
@@ -50,9 +50,9 @@ public class RedGoalTwelveAuto extends OpMode {
     private final Pose lowSpikeControlPtLowPose = new Pose(72, lowSpikeY);
 
     /** SPIKE POSES **/
-    private final Pose highSpikePose = new Pose(spikeX + 2, highSpikeY + 2, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose midSpikePose = new Pose(spikeX + 12.5, midSpikeY, Math.toRadians(180)); // Middle (Second Set) of Artifacts from the Spike Mark.
-    private final Pose lowSpikePose = new Pose(spikeX, lowSpikeY, Math.toRadians(180)); // Lowest (Third Set) of Artifacts from the Spike Mark.
+    private final Pose highSpikePose = new Pose(spikeX, highSpikeY + 2, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
+    private final Pose midSpikePose = new Pose(spikeX + 10, midSpikeY, Math.toRadians(180)); // Middle (Second Set) of Artifacts from the Spike Mark.
+    private final Pose lowSpikePose = new Pose(spikeX + 10, lowSpikeY, Math.toRadians(180)); // Lowest (Third Set) of Artifacts from the Spike Mark.
 
     /** PATH CHAINS **/
 
@@ -61,7 +61,7 @@ public class RedGoalTwelveAuto extends OpMode {
 
         scorePreload = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, scorePose))
-                .setConstantHeadingInterpolation(startHeading)
+                .setLinearHeadingInterpolation(startHeading, startHeading - Math.toRadians(5))
                 .build();
 
         grabPPG = follower.pathBuilder()
@@ -77,7 +77,7 @@ public class RedGoalTwelveAuto extends OpMode {
 
         scorePPG = follower.pathBuilder()
                 .addPath(new BezierCurve(gatePose, highSpikeControlPtPose, scorePose))
-                .setLinearHeadingInterpolation(gateHeading, scorePose.getHeading() - Math.toRadians(7))
+                .setLinearHeadingInterpolation(gateHeading, scorePose.getHeading())
                 .build();
 
         grabPGP = follower.pathBuilder()
@@ -87,23 +87,22 @@ public class RedGoalTwelveAuto extends OpMode {
                 .build();
 
         scorePGP = follower.pathBuilder()
-                .addPath(new BezierCurve(midSpikePose, midSpikeControlPtPose, new Pose(99, 108, Math.toRadians(38))))
-                .setLinearHeadingInterpolation(midSpikePose.getHeading(), Math.toRadians(38))
+                .addPath(new BezierCurve(midSpikePose, midSpikeControlPtPose, scorePose))
+                .setLinearHeadingInterpolation(midSpikePose.getHeading(), scoreHeading)
                 .build();
 
         grabGPP = follower.pathBuilder()
-                .addPath(new BezierCurve(new Pose(99, 108, Math.toRadians(38)), lowSpikeControlPtHighPose, lowSpikeControlPtLowPose, lowSpikePose))
-                .setTangentHeadingInterpolation()
-                .setReversed()
+                .addPath(new BezierCurve(scorePose, lowSpikeControlPtHighPose, lowSpikeControlPtLowPose, lowSpikePose))
+                .setLinearHeadingInterpolation(scoreHeading, lowSpikePose.getHeading())
                 .build();
 
         scoreGPP = follower.pathBuilder()
-                .addPath(new BezierCurve(lowSpikePose, lowSpikeControlPtLowPose, lowSpikeControlPtHighPose, new Pose(99, 108, Math.toRadians(38))))
-                .setTangentHeadingInterpolation()
+                .addPath(new BezierCurve(lowSpikePose, lowSpikeControlPtLowPose, lowSpikeControlPtHighPose, scorePose))
+                .setLinearHeadingInterpolation(lowSpikePose.getHeading(), scoreHeading)
                 .build();
 
         leaveZone = follower.pathBuilder()
-                .addPath(new BezierCurve(new Pose(99, 108, Math.toRadians(38)), parkPose))
+                .addPath(new BezierCurve(scorePose, parkPose))
                 .setLinearHeadingInterpolation(scoreHeading, parkHeading)
                 .build();
     }
@@ -111,9 +110,11 @@ public class RedGoalTwelveAuto extends OpMode {
     private final double shootPreloadWait = 2;
 
 
-    private final double shootIntakedWait = 1.5;
-    private final double intakeWait = .1;
-    private final double tapWait = .1;
+    private final double shootIntakedWait = 2.25;
+    private final double intakeWait = .25;
+    private final double tapWait = .75;
+
+    private final double shootBuffer = .5;
 
     public void autonomousPathUpdate() {
         switch (pathState) {
@@ -128,7 +129,7 @@ public class RedGoalTwelveAuto extends OpMode {
                 }
                 break;
             case 2:
-                if (transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
+                if (pathTimer.getElapsedTimeSeconds() > shootBuffer && transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
                     transport.ricoTransport = Transport.RicoTransport.SHOOT;
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
@@ -169,7 +170,7 @@ public class RedGoalTwelveAuto extends OpMode {
                 }
                 break;
             case 8:
-                if (transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
+                if (pathTimer.getElapsedTimeSeconds() > shootBuffer && transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
                     transport.ricoTransport = Transport.RicoTransport.SHOOT;
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
@@ -197,7 +198,7 @@ public class RedGoalTwelveAuto extends OpMode {
                 }
                 break;
             case 12:
-                if (transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
+                if (pathTimer.getElapsedTimeSeconds() > shootBuffer && transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
                     transport.ricoTransport = Transport.RicoTransport.SHOOT;
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
@@ -225,7 +226,7 @@ public class RedGoalTwelveAuto extends OpMode {
                 }
                 break;
             case 16:
-                if (transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
+                if (pathTimer.getElapsedTimeSeconds() > shootBuffer && transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
                     transport.ricoTransport = Transport.RicoTransport.SHOOT;
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;

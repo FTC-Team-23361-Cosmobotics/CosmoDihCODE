@@ -5,4 +5,6 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 public class GlobalVars {
     public static boolean inAuto = false;
     public static boolean isRed = false;
+
+    public static boolean hapticOn = true;
 }

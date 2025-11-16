@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Transport;
 import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
 
-@Autonomous(name = "BlueFarAuto: Six Artifacts", group = "FarAuto")
+@Autonomous(name = "BlueFarAuto: Six Artifacts", group = "FarAuto", preselectTeleOp = "DihCodeTeleop")
 public class BlueFarSixAuto extends OpMode {
     private VoltageSensor voltageSensor;
     private Follower follower;

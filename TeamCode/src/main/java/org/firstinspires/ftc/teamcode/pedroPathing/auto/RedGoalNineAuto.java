@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Transport;
 import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
 
-@Autonomous(name = "RedGoalAuto: Nine Artifacts", group = "GoalAuto")
+@Autonomous(name = "RedGoalAuto: Nine Artifacts", group = "GoalAuto", preselectTeleOp = "DihCodeTeleop")
 public class RedGoalNineAuto extends OpMode {
     private VoltageSensor voltageSensor;
     private Follower follower;
@@ -27,9 +27,9 @@ public class RedGoalNineAuto extends OpMode {
 
 
     /** POSE COORDINATES **/
-    public static double spikeX = 132, highSpikeY = 80, midSpikeY = 60, lowSpikeY = 34;
+    public static double spikeX = 132, highSpikeY = 80, midSpikeY = 58, lowSpikeY = 34;
     public static double startX = 124, startY = 122, startHeading = Math.toRadians(45);
-    public static double scoreX = 106, scoreY = 106, scoreHeading = Math.toRadians(45);
+    public static double scoreX = 108, scoreY = 108, scoreHeading = Math.toRadians(45);
 
     public static double parkX = 108, parkY = 72, parkHeading = Math.toRadians(0);
 
@@ -79,32 +79,32 @@ public class RedGoalNineAuto extends OpMode {
                 .build();
 
         scorePGP = follower.pathBuilder()
-                .addPath(new BezierCurve(midSpikePose, midSpikeControlPtPose, new Pose(99, 108, Math.toRadians(38))))
-                .setLinearHeadingInterpolation(midSpikePose.getHeading(), Math.toRadians(38))
+                .addPath(new BezierCurve(midSpikePose, midSpikeControlPtPose, scorePose))
+                .setLinearHeadingInterpolation(midSpikePose.getHeading(), scoreHeading)
+                .build();
+
+        grabGPP = follower.pathBuilder()
+                .addPath(new BezierCurve(scorePose, lowSpikeControlPtHighPose, lowSpikeControlPtLowPose, lowSpikePose))
+                .setLinearHeadingInterpolation(scoreHeading, lowSpikePose.getHeading())
+                .build();
+
+        scoreGPP = follower.pathBuilder()
+                .addPath(new BezierCurve(lowSpikePose, lowSpikeControlPtLowPose, lowSpikeControlPtHighPose, scorePose))
+                .setLinearHeadingInterpolation(lowSpikePose.getHeading(), scoreHeading)
                 .build();
 
         leaveZone = follower.pathBuilder()
                 .addPath(new BezierCurve(scorePose, parkPose))
                 .setLinearHeadingInterpolation(scoreHeading, parkHeading)
                 .build();
-
-        grabGPP = follower.pathBuilder()
-                .addPath(new BezierCurve(scorePose, lowSpikeControlPtHighPose, lowSpikeControlPtLowPose, lowSpikePose))
-                .setTangentHeadingInterpolation()
-                .setReversed()
-                .build();
-
-        scoreGPP = follower.pathBuilder()
-                .addPath(new BezierCurve(lowSpikePose, lowSpikeControlPtLowPose, lowSpikeControlPtHighPose, scorePose))
-                .setTangentHeadingInterpolation()
-                .build();
     }
 
     private final double shootPreloadWait = 2;
 
 
-    private final double shootIntakedWait = 1.5;
+    private final double shootIntakedWait = 1.75;
     private final double intakeWait = .1;
+    private final double shootBuffer = .5;
 
     public void autonomousPathUpdate() {
         switch (pathState) {
@@ -119,7 +119,7 @@ public class RedGoalNineAuto extends OpMode {
                 }
                 break;
             case 2:
-                if (transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
+                if (pathTimer.getElapsedTimeSeconds() > shootBuffer && transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
                     transport.ricoTransport = Transport.RicoTransport.SHOOT;
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
@@ -147,7 +147,7 @@ public class RedGoalNineAuto extends OpMode {
                 }
                 break;
             case 6:
-                if (transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
+                if (pathTimer.getElapsedTimeSeconds() > shootBuffer && transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
                     transport.ricoTransport = Transport.RicoTransport.SHOOT;
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
@@ -175,7 +175,7 @@ public class RedGoalNineAuto extends OpMode {
                 }
                 break;
             case 10:
-                if (transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
+                if (pathTimer.getElapsedTimeSeconds() > shootBuffer && transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
                     transport.ricoTransport = Transport.RicoTransport.SHOOT;
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;

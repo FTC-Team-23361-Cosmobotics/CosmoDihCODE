@@ -15,11 +15,14 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
+import org.firstinspires.ftc.teamcode.teleop.systems.Drive;
+
 import java.util.List;
 
 @Config
 @TeleOp
 public class FlywheelTest extends OpMode {
+    public Drive drive;
     public VoltageSensor voltageSensor;
     public MotorEx shooter;
 
@@ -50,6 +53,8 @@ public class FlywheelTest extends OpMode {
 
     @Override
     public void init() {
+        drive = new Drive(hardwareMap, true, 0);
+
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         hubs = hardwareMap.getAll(LynxModule.class);
         for (LynxModule hub : hubs) {
@@ -77,6 +82,8 @@ public class FlywheelTest extends OpMode {
 
         intake.setPower(intakePower);
         transfer.setPower(transferPower);
+
+        drive.update(gamepad1, gamepad2, voltageMultiplier);
 //        ticks++;
 //        if (ticks > 500) {
 //            ticks = 0;

@@ -59,6 +59,8 @@ public class DihCodeTeleop extends OpMode {
         telemetry.addData("FrontRight Power", Drive.frontRight.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("BackLeft Power", Drive.backLeft.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("BackRight Power", Drive.backRight.getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("Match Timer", Transport.matchTimer.seconds());
+        telemetry.addData("Low Level Color Value", Transport.lowLevel);
         telemetry.update();
     }
 }
