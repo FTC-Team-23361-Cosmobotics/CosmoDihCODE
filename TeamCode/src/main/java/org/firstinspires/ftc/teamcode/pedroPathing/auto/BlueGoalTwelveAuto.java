@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.auto;
 
+import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.transitionHeading;
+
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -16,7 +18,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Transport;
 import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
 
-@Autonomous(name = "BlueGoalAuto: Twelve Artifacts", group = "GoalAuto", preselectTeleOp = "DihCodeTeleop")
+@Autonomous(name = "BlueGoalAuto: Twelve Artifacts", group = "GoalAuto", preselectTeleOp = "BlueDihCodeTeleop")
 public class BlueGoalTwelveAuto extends OpMode {
     private VoltageSensor voltageSensor;
     private Follower follower;
@@ -29,7 +31,7 @@ public class BlueGoalTwelveAuto extends OpMode {
     /** POSE COORDINATES **/
     private final double spikeX = 12, highSpikeY = 81, midSpikeY = 57.5, lowSpikeY = 36;
     public static double startX = 20, startY = 122, startHeading = Math.toRadians(135);
-    public static double scoreX = 36, scoreY = 101, scoreHeading = Math.toRadians(132);
+    public static double scoreX = 30, scoreY = 95, scoreHeading = Math.toRadians(132);
     public static double parkX = 15, parkY = 96, parkHeading = Math.toRadians(180);
 
     public static double gateX = 9, gateY = 73, gateHeading = Math.toRadians(0);
@@ -132,7 +134,7 @@ public class BlueGoalTwelveAuto extends OpMode {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                 }
                 if (pathTimer.getElapsedTimeSeconds() > (shootPreloadWait * 12 / voltageSensor.getVoltage())) {
-                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
+                    transport.ricoTransport = Transport.RicoTransport.INTAKE;
                     follower.followPath(grabPPG,true);
                     setPathState(3);
                 }
@@ -144,15 +146,11 @@ public class BlueGoalTwelveAuto extends OpMode {
                 break;
             case 4:
                 if (pathTimer.getElapsedTimeSeconds() > intakeWait) {
-                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                     follower.followPath(tapGate,true);
                     setPathState(5);
                 }
                 break;
             case 5:
-                if (pathTimer.getElapsedTimeSeconds() > .75) {
-                    transport.ricoTransport = Transport.RicoTransport.HOME;
-                }
                 if (!follower.isBusy()) {
                     setPathState(6);
                 }
@@ -176,7 +174,7 @@ public class BlueGoalTwelveAuto extends OpMode {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                 }
                 if (pathTimer.getElapsedTimeSeconds() > (shootIntakedWait * 12 / voltageSensor.getVoltage())) {
-                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
+                    transport.ricoTransport = Transport.RicoTransport.INTAKE;
                     follower.followPath(grabPGP,true);
                     setPathState(9);
                 }
@@ -188,6 +186,7 @@ public class BlueGoalTwelveAuto extends OpMode {
                 break;
             case 10:
                 if (pathTimer.getElapsedTimeSeconds() > intakeWait) {
+                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                     follower.followPath(scorePGP,true);
                     setPathState(11);
                 }
@@ -204,7 +203,7 @@ public class BlueGoalTwelveAuto extends OpMode {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                 }
                 if (pathTimer.getElapsedTimeSeconds() > (shootIntakedWait * 12 / voltageSensor.getVoltage())) {
-                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
+                    transport.ricoTransport = Transport.RicoTransport.INTAKE;
                     follower.followPath(grabGPP,true);
                     setPathState(13);
                 }
@@ -216,6 +215,7 @@ public class BlueGoalTwelveAuto extends OpMode {
                 break;
             case 14:
                 if (pathTimer.getElapsedTimeSeconds() > intakeWait) {
+                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                     follower.followPath(scoreGPP,true);
                     setPathState(15);
                 }
@@ -232,14 +232,14 @@ public class BlueGoalTwelveAuto extends OpMode {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                 }
                 if (pathTimer.getElapsedTimeSeconds() > (shootIntakedWait * 12 / voltageSensor.getVoltage())) {
-                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
+                    transport.ricoTransport = Transport.RicoTransport.HOME;
                     follower.followPath(leaveZone,true);
                     setPathState(17);
                 }
                 break;
             case 17:
                 if (!follower.isBusy()) {
-                    transport.ricoTransport = Transport.RicoTransport.HOME;
+                    transitionHeading = follower.getHeading();
                     setPathState(-1);
                 }
                 break;

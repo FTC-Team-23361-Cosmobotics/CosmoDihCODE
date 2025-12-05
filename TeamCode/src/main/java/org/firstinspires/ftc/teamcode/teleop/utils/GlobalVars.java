@@ -6,5 +6,5 @@ public class GlobalVars {
     public static boolean inAuto = false;
     public static boolean isRed = false;
 
-    public static boolean hapticOn = true;
+    public static double transitionHeading = 0;
 }

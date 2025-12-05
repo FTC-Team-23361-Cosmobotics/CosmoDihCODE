@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.auto;
 
+import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.transitionHeading;
+
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -16,7 +18,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Transport;
 import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
 
-@Autonomous(name = "RedFarAuto: Six Artifacts", group = "FarAuto", preselectTeleOp = "DihCodeTeleop")
+@Autonomous(name = "RedFarAuto: Six Artifacts", group = "FarAuto", preselectTeleOp = "RedDihCodeTeleop")
 public class RedFarSixAuto extends OpMode {
     private VoltageSensor voltageSensor;
     private Follower follower;
@@ -129,6 +131,7 @@ public class RedFarSixAuto extends OpMode {
                 break;
             case 7:
                 if (!follower.isBusy()) {
+                    transitionHeading = follower.getHeading();
                     setPathState(-1);
                 }
         }

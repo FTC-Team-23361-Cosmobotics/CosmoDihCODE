@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.pedroPathing.auto;
 
+import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.transitionHeading;
+
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -16,7 +18,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.teleop.systems.Transport;
 import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
 
-@Autonomous(name = "BlueGoalAuto: Nine Artifacts", group = "GoalAuto", preselectTeleOp = "DihCodeTeleop")
+@Autonomous(name = "BlueGoalAuto: Nine Artifacts", group = "GoalAuto", preselectTeleOp = "BlueDihCodeTeleop")
 public class BlueGoalNineAuto extends OpMode {
     private VoltageSensor voltageSensor;
     private Follower follower;
@@ -122,7 +124,7 @@ public class BlueGoalNineAuto extends OpMode {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                 }
                 if (pathTimer.getElapsedTimeSeconds() > (shootPreloadWait * 12 / voltageSensor.getVoltage())) {
-                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
+                    transport.ricoTransport = Transport.RicoTransport.INTAKE;
                     follower.followPath(grabPPG,true);
                     setPathState(3);
                 }
@@ -134,6 +136,7 @@ public class BlueGoalNineAuto extends OpMode {
                 break;
             case 4:
                 if (pathTimer.getElapsedTimeSeconds() > intakeWait) {
+                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                     follower.followPath(scorePPG,true);
                     setPathState(5);
                 }
@@ -150,7 +153,7 @@ public class BlueGoalNineAuto extends OpMode {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                 }
                 if (pathTimer.getElapsedTimeSeconds() > (shootIntakedWait * 12 / voltageSensor.getVoltage())) {
-                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
+                    transport.ricoTransport = Transport.RicoTransport.INTAKE;
                     follower.followPath(grabPGP,true);
                     setPathState(7);
                 }
@@ -162,6 +165,7 @@ public class BlueGoalNineAuto extends OpMode {
                 break;
             case 8:
                 if (pathTimer.getElapsedTimeSeconds() > intakeWait) {
+                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                     follower.followPath(scorePGP,true);
                     setPathState(9);
                 }
@@ -178,14 +182,14 @@ public class BlueGoalNineAuto extends OpMode {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                 }
                 if (pathTimer.getElapsedTimeSeconds() > (shootIntakedWait * 12 / voltageSensor.getVoltage())) {
-                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
+                    transport.ricoTransport = Transport.RicoTransport.HOME;
                     follower.followPath(leaveZone,true);
                     setPathState(11);
                 }
                 break;
             case 11:
                 if (!follower.isBusy()) {
-                    transport.ricoTransport = Transport.RicoTransport.HOME;
+                    transitionHeading = follower.getHeading();
                     setPathState(-1);
                 }
                 break;
