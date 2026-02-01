@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.ConstantsV1;
 import org.firstinspires.ftc.teamcode.teleopV1.systems.Transport;
 import org.firstinspires.ftc.teamcode.teleopV1.utils.GlobalVars;
 
-@Autonomous(name = "BlueGoalAuto: Twelve Artifacts", group = "GoalAuto", preselectTeleOp = "BlueDihCodeTeleop")
+@Autonomous(name = "BlueGoalAuto: Twelve Artifacts", group = "GoalAuto", preselectTeleOp = "RedDihCodeTeleop")
 public class BlueGoalTwelveAuto extends OpMode {
     private VoltageSensor voltageSensor;
     private Follower follower;
@@ -29,22 +29,24 @@ public class BlueGoalTwelveAuto extends OpMode {
 
 
     /** POSE COORDINATES **/
-    private final double spikeX = 12, highSpikeY = 81, midSpikeY = 57.5, lowSpikeY = 36;
-    public static double startX = 20, startY = 122, startHeading = Math.toRadians(135);
-    public static double scoreX = 34, scoreY = 99, scoreHeading = Math.toRadians(132);
-    public static double parkX = 15, parkY = 96, parkHeading = Math.toRadians(180);
+    public static double startX = 17.7924217463, startY = 119.32784184514004, startHeading = Math.toRadians(146);
+    public static double spikeX = 16, highSpikeY = 84, midSpikeY = 60, lowSpikeY = 36;
+    public static double scoreX = 42, scoreY = 102, scoreMedX = 60, scoreMedY = 84, scoreHeading = Math.toRadians(135);
 
-    public static double gateX = 9, gateY = 70, gateHeading = Math.toRadians(0);
+    public static double parkX = 64, parkY = 98, parkHeading = Math.toRadians(135);
+    public static double gateX = 15, gateY = 70, gateHeading = Math.toRadians(0);
 
     /** START, SCORE, GATE, AND PARK POSES **/
     private final Pose startPose = new Pose(startX, startY, startHeading); // Start Pose of our robot.
     private final Pose scorePose = new Pose(scoreX, scoreY, scoreHeading); // Scoring Pose of our robot. It is facing the goal at a 135 degree angle.
+
+    private final Pose mediumScorePose = new Pose(scoreMedX, scoreMedY, scoreHeading);
     private final Pose parkPose = new Pose(parkX, parkY, parkHeading);
     private final Pose gatePose = new Pose(gateX, gateY, gateHeading);
 
 
     /** CONTROL POINTS **/
-    private final Pose gateControlPtPose = new Pose(40, 78);
+    private final Pose gateControlPtPose = new Pose(40, 77);
     private final Pose highSpikeControlPtPose = new Pose(59, highSpikeY);
     private final Pose midSpikeControlPtPose = new Pose(59, midSpikeY);
 
@@ -53,10 +55,11 @@ public class BlueGoalTwelveAuto extends OpMode {
 
     /** SPIKE POSES **/
     private final Pose highSpikePose = new Pose(spikeX, highSpikeY, Math.toRadians(0)); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose midSpikePose = new Pose(spikeX - 11.5, midSpikeY, Math.toRadians(0)); // Middle (Second Set) of Artifacts from the Spike Mark.
-    private final Pose lowSpikePose = new Pose(spikeX - 11.5, lowSpikeY, Math.toRadians(0)); // Lowest (Third Set) of Artifacts from the Spike Mark.
+    private final Pose midSpikePose = new Pose(spikeX + 7, midSpikeY, Math.toRadians(0)); // Middle (Second Set) of Artifacts from the Spike Mark.
+    private final Pose lowSpikePose = new Pose(spikeX + 7, lowSpikeY, Math.toRadians(0)); // Lowest (Third Set) of Artifacts from the Spike Mark.
 
     /** PATH CHAINS **/
+
     private PathChain scorePreload, grabPPG, tapGate, scorePPG, grabPGP, scorePGP, grabGPP, scoreGPP, leaveZone;
     public void buildPaths() {
 
@@ -98,7 +101,7 @@ public class BlueGoalTwelveAuto extends OpMode {
                 .build();
 
         scoreGPP = follower.pathBuilder()
-                .addPath(new BezierCurve(lowSpikePose, lowSpikeControlPtLowPose, lowSpikeControlPtHighPose, scorePose))
+                .addPath(new BezierLine(lowSpikePose, scorePose))
                 .setLinearHeadingInterpolation(lowSpikePose.getHeading(), scoreHeading)
                 .build();
 
@@ -108,12 +111,10 @@ public class BlueGoalTwelveAuto extends OpMode {
                 .build();
     }
 
-    private final double shootPreloadWait = 2;
-
-    private final double shootIntakedWait = 2.25;
+    private final double shootBuffer = .35;
+    private final double shootWait = shootBuffer + 1.5;
     private final double intakeWait = .25;
     private final double tapWait = .75;
-    private final double shootBuffer = .5;
 
     public void autonomousPathUpdate() {
         switch (pathState) {
@@ -133,7 +134,7 @@ public class BlueGoalTwelveAuto extends OpMode {
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                 }
-                if (pathTimer.getElapsedTimeSeconds() > (shootPreloadWait * 12 / voltageSensor.getVoltage())) {
+                if (pathTimer.getElapsedTimeSeconds() > shootWait) {
                     transport.ricoTransport = Transport.RicoTransport.INTAKE;
                     follower.followPath(grabPPG,true);
                     setPathState(3);
@@ -173,7 +174,7 @@ public class BlueGoalTwelveAuto extends OpMode {
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                 }
-                if (pathTimer.getElapsedTimeSeconds() > (shootIntakedWait * 12 / voltageSensor.getVoltage())) {
+                if (pathTimer.getElapsedTimeSeconds() > shootWait) {
                     transport.ricoTransport = Transport.RicoTransport.INTAKE;
                     follower.followPath(grabPGP,true);
                     setPathState(9);
@@ -202,7 +203,7 @@ public class BlueGoalTwelveAuto extends OpMode {
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                 }
-                if (pathTimer.getElapsedTimeSeconds() > (shootIntakedWait * 12 / voltageSensor.getVoltage())) {
+                if (pathTimer.getElapsedTimeSeconds() > shootWait) {
                     transport.ricoTransport = Transport.RicoTransport.INTAKE;
                     follower.followPath(grabGPP,true);
                     setPathState(13);
@@ -231,7 +232,7 @@ public class BlueGoalTwelveAuto extends OpMode {
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                 }
-                if (pathTimer.getElapsedTimeSeconds() > (shootIntakedWait * 12 / voltageSensor.getVoltage())) {
+                if (pathTimer.getElapsedTimeSeconds() > shootWait) {
                     transport.ricoTransport = Transport.RicoTransport.HOME;
                     follower.followPath(leaveZone,true);
                     setPathState(17);
@@ -255,7 +256,7 @@ public class BlueGoalTwelveAuto extends OpMode {
     /** This method is called once at the init of the OpMode. **/
     @Override
     public void init() {
-        GlobalVars.isRed = false;
+        GlobalVars.isRed = true;
         GlobalVars.inAuto = true;
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         transport = new Transport(hardwareMap);
@@ -308,4 +309,3 @@ public class BlueGoalTwelveAuto extends OpMode {
     @Override
     public void stop() {}
 }
-
