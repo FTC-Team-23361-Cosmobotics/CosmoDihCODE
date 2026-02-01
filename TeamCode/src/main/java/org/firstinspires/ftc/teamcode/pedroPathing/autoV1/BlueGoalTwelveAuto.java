@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.ConstantsV1;
 import org.firstinspires.ftc.teamcode.teleopV1.systems.Transport;
 import org.firstinspires.ftc.teamcode.teleopV1.utils.GlobalVars;
 
-@Autonomous(name = "BlueGoalAuto: Twelve Artifacts", group = "GoalAuto", preselectTeleOp = "RedDihCodeTeleop")
+@Autonomous(name = "BlueGoalAuto: Twelve Artifacts", group = "GoalAuto", preselectTeleOp = "BlueDihCodeTeleop")
 public class BlueGoalTwelveAuto extends OpMode {
     private VoltageSensor voltageSensor;
     private Follower follower;
