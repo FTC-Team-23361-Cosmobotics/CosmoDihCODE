@@ -1,6 +1,6 @@
-package org.firstinspires.ftc.teamcode.teleop;
+package org.firstinspires.ftc.teamcode.teleopV1;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.transitionHeading;
+import static org.firstinspires.ftc.teamcode.teleopV1.utils.GlobalVars.transitionHeading;
 
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -10,32 +10,33 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.teamcode.teleop.systems.Drive;
-import org.firstinspires.ftc.teamcode.teleop.systems.Transport;
-import org.firstinspires.ftc.teamcode.teleop.systems.Vision;
-import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
+import org.firstinspires.ftc.teamcode.teleopV1.systems.Drive;
+import org.firstinspires.ftc.teamcode.teleopV1.systems.Transport;
+import org.firstinspires.ftc.teamcode.teleopV1.systems.Vision;
+import org.firstinspires.ftc.teamcode.teleopV1.utils.GlobalVars;
 
 import java.util.List;
 
 @TeleOp(name = "RedDihCodeTeleop", group = "TeleOp")
-public class RedDihCodeTeleop extends OpMode {
+public class RedDihCodeTeleopV1 extends OpMode {
     Drive drive;
     Transport transport;
 
     Vision vision;
+
     public VoltageSensor voltageSensor;
     public List<LynxModule> allHubs;
     public LynxModule CtrlHub;
 
     public LynxModule ExpHub;
 
-    public double voltageMultiplier;
+    public double voltage;
 
     public double oldTime = 0;
 
     public ElapsedTime matchTimer;
 
-    public boolean parkTime;
+    public static double nominalVoltage = 14;
 
 
     @Override
@@ -56,6 +57,10 @@ public class RedDihCodeTeleop extends OpMode {
         for (LynxModule hub : allHubs) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
+
+        telemetry.addData("Vision Connected", Vision.isConnected);
+        telemetry.addData("Vision Running", Vision.isRunning);
+        telemetry.update();
     }
 
     @Override
@@ -75,22 +80,30 @@ public class RedDihCodeTeleop extends OpMode {
         double loopTime = newTime-oldTime;
         oldTime = newTime;
 
-        voltageMultiplier = 12 / voltageSensor.getVoltage();
-        drive.update(gamepad1, gamepad2, voltageMultiplier);
-        transport.update(gamepad1, gamepad2, voltageMultiplier);
-        vision.update(drive.botHeading);
+        voltage = voltageSensor.getVoltage();
+        drive.update(gamepad1, gamepad2, nominalVoltage / voltage);
+        transport.update(gamepad1, gamepad2, nominalVoltage / voltage);
+        vision.update();
 
-        telemetry.addData("ShooterP", transport.shooterp);
+        telemetry.addData("Match Timer", matchTimer.seconds());
+        telemetry.addData("REV Hub Loop Time in Ms: ", loopTime * 1000); //prints the control system refresh rate
+        telemetry.addData("IsRed", GlobalVars.isRed);
         telemetry.addData("rx", Drive.rx);
         telemetry.addData("tx", Vision.tX);
         telemetry.addData("ty", Vision.tY);
         telemetry.addData("Valid Result", Vision.validResult);
+        telemetry.addData("Vision Connected", Vision.isConnected);
+        telemetry.addData("Vision Running", Vision.isRunning);
+        telemetry.addData("IsNull", Vision.result == null);
+        telemetry.addData("IsValid", Vision.result.isValid());
+        telemetry.addData("ShooterP", transport.shooterp);
         telemetry.addData("Flywheel Velocity", Transport.shooterVelocity);
         telemetry.addData("Flywheel Target Velocity", Transport.shooterVelocityTarget);
         telemetry.addData("Flywheel Fire Tolerance", Transport.fireTolerance);
         telemetry.addData("Flywheel Ready", transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget));
+        telemetry.addData("Flywheel Linear Velocity M/S", (Transport.shooterVelocity / 28 * 2 * Math.PI * .048)); //Shooter Velocity in TPS, Divide by CPR, Multiply by 2PI, and then Multiply by Radius of Flywheel
         telemetry.addData("Voltage", voltageSensor.getVoltage());
-        telemetry.addData("Voltage Multiplier", voltageMultiplier);
+        telemetry.addData("Voltage Multiplier", voltage);
         telemetry.addData("Intake Power", Transport.intake.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("Transfer Power", Transport.transfer.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("FrontLeft Power", Drive.frontLeft.getCurrent(CurrentUnit.AMPS));
@@ -98,13 +111,9 @@ public class RedDihCodeTeleop extends OpMode {
         telemetry.addData("BackLeft Power", Drive.backLeft.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("BackRight Power", Drive.backRight.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("Match Timer", Transport.matchTimer.seconds());
-        telemetry.addData("Low Level Color Value", Transport.lowLevel);
-        telemetry.addData("REV Hub Loop Time (Period): ", loopTime); //prints the control system refresh rate
+//        telemetry.addData("Low Level Color Value", Transport.lowLevel);
         telemetry.addData("Heading", Math.toDegrees(drive.botHeading));
-        telemetry.addData("Transition Heading", Math.toDegrees(transitionHeading));
-        telemetry.addData("Match Timer", matchTimer.seconds());
-        telemetry.addData("IsNull", Vision.result == null);
-        telemetry.addData("IsValid", Vision.result.isValid());
+//        telemetry.addData("Transition Heading", Math.toDegrees(transitionHeading));
         telemetry.update();
     }
 }

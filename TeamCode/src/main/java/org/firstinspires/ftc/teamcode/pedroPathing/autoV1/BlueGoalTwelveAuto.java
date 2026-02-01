@@ -1,6 +1,6 @@
-package org.firstinspires.ftc.teamcode.pedroPathing.auto;
+package org.firstinspires.ftc.teamcode.pedroPathing.autoV1;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.transitionHeading;
+import static org.firstinspires.ftc.teamcode.teleopV1.utils.GlobalVars.transitionHeading;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
@@ -13,13 +13,13 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.pedroPathing.ConstantsV1;
 
-import org.firstinspires.ftc.teamcode.teleop.systems.Transport;
-import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
+import org.firstinspires.ftc.teamcode.teleopV1.systems.Transport;
+import org.firstinspires.ftc.teamcode.teleopV1.utils.GlobalVars;
 
-@Autonomous(name = "RedGoalAuto: Fifteen Artifacts", group = "GoalAuto", preselectTeleOp = "RedDihCodeTeleop")
-public class RedGoalFifteenAuto extends OpMode {
+@Autonomous(name = "BlueGoalAuto: Twelve Artifacts", group = "GoalAuto", preselectTeleOp = "BlueDihCodeTeleop")
+public class BlueGoalTwelveAuto extends OpMode {
     private VoltageSensor voltageSensor;
     private Follower follower;
 
@@ -29,12 +29,12 @@ public class RedGoalFifteenAuto extends OpMode {
 
 
     /** POSE COORDINATES **/
-    public static double spikeX = 132, highSpikeY = 81, midSpikeY = 58, lowSpikeY = 34, hpY = 12;
-    public static double startX = 124, startY = 122, startHeading = Math.toRadians(45);
-    public static double scoreX = 92, scoreY = 92, scoreHeading = Math.toRadians(45);
+    private final double spikeX = 12, highSpikeY = 81, midSpikeY = 57.5, lowSpikeY = 36;
+    public static double startX = 20, startY = 122, startHeading = Math.toRadians(135);
+    public static double scoreX = 34, scoreY = 99, scoreHeading = Math.toRadians(132);
+    public static double parkX = 15, parkY = 96, parkHeading = Math.toRadians(180);
 
-    public static double parkX = 126, parkY = 96, parkHeading = Math.toRadians(0);
-    public static double gateX = 131, gateY = 74, gateHeading = Math.toRadians(180);
+    public static double gateX = 9, gateY = 70, gateHeading = Math.toRadians(0);
 
     /** START, SCORE, GATE, AND PARK POSES **/
     private final Pose startPose = new Pose(startX, startY, startHeading); // Start Pose of our robot.
@@ -44,27 +44,25 @@ public class RedGoalFifteenAuto extends OpMode {
 
 
     /** CONTROL POINTS **/
-    private final Pose gateControlPtPose = new Pose(104, 78);
-    private final Pose highSpikeControlPtPose = new Pose(85, highSpikeY);
-    private final Pose midSpikeControlPtPose = new Pose(78, midSpikeY);
+    private final Pose gateControlPtPose = new Pose(40, 78);
+    private final Pose highSpikeControlPtPose = new Pose(59, highSpikeY);
+    private final Pose midSpikeControlPtPose = new Pose(59, midSpikeY);
 
-    private final Pose lowSpikeControlPtHighPose = new Pose(78, 70);
-    private final Pose lowSpikeControlPtLowPose = new Pose(78, lowSpikeY);
+    private final Pose lowSpikeControlPtHighPose = new Pose(59, 70);
+    private final Pose lowSpikeControlPtLowPose = new Pose(59, lowSpikeY);
 
     /** SPIKE POSES **/
-    private final Pose highSpikePose = new Pose(spikeX, highSpikeY + 2, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose midSpikePose = new Pose(spikeX + 10, midSpikeY, Math.toRadians(180)); // Middle (Second Set) of Artifacts from the Spike Mark.
-    private final Pose lowSpikePose = new Pose(spikeX + 12.5, lowSpikeY, Math.toRadians(180)); // Lowest (Third Set) of Artifacts from the Spike Mark.
-    private final Pose hpPose = new Pose(spikeX + 15, hpY, Math.toRadians(90));
+    private final Pose highSpikePose = new Pose(spikeX, highSpikeY, Math.toRadians(0)); // Highest (First Set) of Artifacts from the Spike Mark.
+    private final Pose midSpikePose = new Pose(spikeX - 11.5, midSpikeY, Math.toRadians(0)); // Middle (Second Set) of Artifacts from the Spike Mark.
+    private final Pose lowSpikePose = new Pose(spikeX - 11.5, lowSpikeY, Math.toRadians(0)); // Lowest (Third Set) of Artifacts from the Spike Mark.
 
     /** PATH CHAINS **/
-
-    private PathChain scorePreload, grabPPG, tapGate, scorePPG, grabPGP, scorePGP, grabGPP, scoreGPP, leaveZone, grabHP, scoreHP;
+    private PathChain scorePreload, grabPPG, tapGate, scorePPG, grabPGP, scorePGP, grabGPP, scoreGPP, leaveZone;
     public void buildPaths() {
 
         scorePreload = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, scorePose))
-                .setLinearHeadingInterpolation(startHeading, startHeading - Math.toRadians(5))
+                .setLinearHeadingInterpolation(startHeading, scoreHeading)
                 .build();
 
         grabPPG = follower.pathBuilder()
@@ -104,30 +102,18 @@ public class RedGoalFifteenAuto extends OpMode {
                 .setLinearHeadingInterpolation(lowSpikePose.getHeading(), scoreHeading)
                 .build();
 
-        grabHP = follower.pathBuilder()
-                .addPath(new BezierLine(scorePose, hpPose))
-                .setLinearHeadingInterpolation(scoreHeading, hpPose.getHeading())
-                .build();
-
-        scoreHP = follower.pathBuilder()
-                .addPath(new BezierLine(hpPose, scorePose))
-                .setLinearHeadingInterpolation(scoreHeading, hpPose.getHeading())
-                .build();
-
         leaveZone = follower.pathBuilder()
-                .addPath(new BezierCurve(scorePose, parkPose))
+                .addPath(new BezierLine(scorePose, parkPose))
                 .setLinearHeadingInterpolation(scoreHeading, parkHeading)
                 .build();
     }
 
-    private final double shootPreloadWait = .7;
+    private final double shootPreloadWait = 2;
 
-
-    private final double shootIntakedWait = .7;
+    private final double shootIntakedWait = 2.25;
     private final double intakeWait = .25;
     private final double tapWait = .75;
-
-    private final double shootBuffer = .1;
+    private final double shootBuffer = .5;
 
     public void autonomousPathUpdate() {
         switch (pathState) {
@@ -246,47 +232,17 @@ public class RedGoalFifteenAuto extends OpMode {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                 }
                 if (pathTimer.getElapsedTimeSeconds() > (shootIntakedWait * 12 / voltageSensor.getVoltage())) {
-                    transport.ricoTransport = Transport.RicoTransport.INTAKE;
-                    follower.followPath(grabHP,true);
+                    transport.ricoTransport = Transport.RicoTransport.HOME;
+                    follower.followPath(leaveZone,true);
                     setPathState(17);
                 }
                 break;
             case 17:
                 if (!follower.isBusy()) {
-                    setPathState(18);
-                }
-                break;
-            case 18:
-                if (pathTimer.getElapsedTimeSeconds() > intakeWait) {
-                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
-                    follower.followPath(scoreHP,true);
-                    setPathState(19);
-                }
-                break;
-            case 19:
-                if (!follower.isBusy()) {
-                    setPathState(20);
-                }
-                break;
-            case 20:
-                if (pathTimer.getElapsedTimeSeconds() > shootBuffer && transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
-                    transport.ricoTransport = Transport.RicoTransport.SHOOT;
-                } else {
-                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
-                }
-                if (pathTimer.getElapsedTimeSeconds() > (shootIntakedWait * 12 / voltageSensor.getVoltage())) {
-                    transport.ricoTransport = Transport.RicoTransport.HOME;
-                    follower.followPath(leaveZone,true);
-                    setPathState(21);
-                }
-                break;
-            case 21:
-                if (!follower.isBusy()) {
                     transitionHeading = follower.getHeading();
                     setPathState(-1);
                 }
-
-
+                break;
         }
     }
 
@@ -299,14 +255,14 @@ public class RedGoalFifteenAuto extends OpMode {
     /** This method is called once at the init of the OpMode. **/
     @Override
     public void init() {
-        GlobalVars.isRed = true;
+        GlobalVars.isRed = false;
         GlobalVars.inAuto = true;
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         transport = new Transport(hardwareMap);
         pathTimer = new Timer();
         opmodeTimer = new Timer();
         opmodeTimer.resetTimer();
-        follower = Constants.createFollower(hardwareMap);
+        follower = ConstantsV1.createFollower(hardwareMap);
         buildPaths();
         follower.setStartingPose(startPose);
     }
@@ -329,7 +285,7 @@ public class RedGoalFifteenAuto extends OpMode {
     @Override
     public void loop() {
         // These loop the movements of the robot, these must be called continuously in order to work
-        transport.update(12 / voltageSensor.getVoltage());
+        transport.update(14 / voltageSensor.getVoltage());
         follower.update();
         autonomousPathUpdate();
 
@@ -352,3 +308,4 @@ public class RedGoalFifteenAuto extends OpMode {
     @Override
     public void stop() {}
 }
+

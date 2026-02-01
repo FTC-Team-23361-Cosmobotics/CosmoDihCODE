@@ -1,6 +1,6 @@
-package org.firstinspires.ftc.teamcode.pedroPathing.auto;
+package org.firstinspires.ftc.teamcode.pedroPathing.autoV1;
 
-import static org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars.transitionHeading;
+import static org.firstinspires.ftc.teamcode.teleopV1.utils.GlobalVars.transitionHeading;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
@@ -13,10 +13,10 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.pedroPathing.ConstantsV1;
 
-import org.firstinspires.ftc.teamcode.teleop.systems.Transport;
-import org.firstinspires.ftc.teamcode.teleop.utils.GlobalVars;
+import org.firstinspires.ftc.teamcode.teleopV1.systems.Transport;
+import org.firstinspires.ftc.teamcode.teleopV1.utils.GlobalVars;
 
 @Autonomous(name = "BlueFarAuto: Six Artifacts", group = "FarAuto", preselectTeleOp = "BlueDihCodeTeleop")
 public class BlueFarSixAuto extends OpMode {
@@ -29,6 +29,7 @@ public class BlueFarSixAuto extends OpMode {
 
 
     /** POSE COORDINATES **/
+    public static double zoneX = 136, zoneY = 8, zoneHeading = Math.toRadians(180);
     public static double spikeX = 11, lowSpikeY = 42;
     public static double startX = 56, startY = 8, startHeading = Math.toRadians(90);
     public static double scoreX = 59, scoreY = 24, scoreHeading = Math.toRadians(115);
@@ -48,7 +49,9 @@ public class BlueFarSixAuto extends OpMode {
     /** SPIKE POSES **/
     private final Pose lowSpikePose = new Pose(spikeX, lowSpikeY, Math.toRadians(0)); // Lowest (Third Set) of Artifacts from the Spike Mark.
 
-    private PathChain scorePreload, grabGPP, scoreGPP, leaveZone;
+    private final Pose zonePose = new Pose(zoneX, zoneY, zoneHeading);// Lowest (Third Set) of Artifacts from the Spike Mark.
+
+    private PathChain scorePreload, grabGPP, scoreGPP, grabZone, scoreZone, park;
     public void buildPaths() {
 
         scorePreload = follower.pathBuilder()
@@ -65,16 +68,21 @@ public class BlueFarSixAuto extends OpMode {
                 .addPath(new BezierCurve(lowSpikePose, lowSpikeControlPtPose, scorePose))
                 .setLinearHeadingInterpolation(0, scoreHeading)
                 .build();
-        leaveZone = follower.pathBuilder()
+        scoreZone = follower.pathBuilder()
+                .addPath(new BezierLine(zonePose, scorePose))
+                .setLinearHeadingInterpolation(zoneHeading, scoreHeading)
+                .build();
+
+        park = follower.pathBuilder()
                 .addPath(new BezierCurve(scorePose, parkPose))
                 .setLinearHeadingInterpolation(scoreHeading, parkHeading)
                 .build();
     }
 
-    private final double shootWaitPathOne = 3;
+    private final double shootWaitPathOne = 2;
 
 
-    private final double shootWaitPathTwo = 3;
+    private final double shootWaitPathTwo = 2;
     private final double intakeWait = .1;
 
     public void autonomousPathUpdate() {
@@ -97,7 +105,7 @@ public class BlueFarSixAuto extends OpMode {
                 }
                 if (pathTimer.getElapsedTimeSeconds() > (shootWaitPathOne * 12 / voltageSensor.getVoltage())) {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_LONG;
-                    follower.followPath(grabGPP, true);
+                    follower.followPath(grabGPP,true);
                     setPathState(3);
                 }
                 break;
@@ -108,7 +116,7 @@ public class BlueFarSixAuto extends OpMode {
                 break;
             case 4:
                 if (pathTimer.getElapsedTimeSeconds() > intakeWait) {
-                    follower.followPath(scoreGPP, true);
+                    follower.followPath(scoreGPP,true);
                     setPathState(5);
                 }
                 break;
@@ -125,11 +133,39 @@ public class BlueFarSixAuto extends OpMode {
                 }
                 if (pathTimer.getElapsedTimeSeconds() > (shootWaitPathTwo * 12 / voltageSensor.getVoltage())) {
                     transport.ricoTransport = Transport.RicoTransport.HOME;
-                    follower.followPath(leaveZone);
+                    follower.followPath(grabZone);
                     setPathState(7);
                 }
                 break;
             case 7:
+                if (!follower.isBusy()) {
+                    setPathState(8);
+                }
+                break;
+            case 8:
+                if (pathTimer.getElapsedTimeSeconds() > intakeWait) {
+                    follower.followPath(scoreZone,true);
+                    setPathState(9);
+                }
+                break;
+            case 9:
+                if (!follower.isBusy()) {
+                    setPathState(10);
+                }
+                break;
+            case 10:
+                if (pathTimer.getElapsedTimeSeconds() > 1 && transport.inRange(Transport.shooterVelocity, Transport.shooterVelocityTarget)) {
+                    transport.ricoTransport = Transport.RicoTransport.SHOOT;
+                } else {
+                    transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_LONG;
+                }
+                if (pathTimer.getElapsedTimeSeconds() > (shootWaitPathTwo * 12 / voltageSensor.getVoltage())) {
+                    transport.ricoTransport = Transport.RicoTransport.HOME;
+                    follower.followPath(park);
+                    setPathState(11);
+                }
+                break;
+            case 11:
                 if (!follower.isBusy()) {
                     transitionHeading = follower.getHeading();
                     setPathState(-1);
@@ -153,7 +189,7 @@ public class BlueFarSixAuto extends OpMode {
         pathTimer = new Timer();
         opmodeTimer = new Timer();
         opmodeTimer.resetTimer();
-        follower = Constants.createFollower(hardwareMap);
+        follower = ConstantsV1.createFollower(hardwareMap);
         buildPaths();
         follower.setStartingPose(startPose);
     }
@@ -176,7 +212,7 @@ public class BlueFarSixAuto extends OpMode {
     @Override
     public void loop() {
         // These loop the movements of the robot, these must be called continuously in order to work
-        transport.update(12 / voltageSensor.getVoltage());
+        transport.update(14 / voltageSensor.getVoltage());
         follower.update();
         autonomousPathUpdate();
 
