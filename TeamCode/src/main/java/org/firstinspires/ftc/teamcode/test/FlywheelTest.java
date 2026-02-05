@@ -37,9 +37,9 @@ public class FlywheelTest extends OpMode {
     public List<LynxModule> hubs;
 
     public PIDFController shooterController;
-    public static double shooterp = .02, shooteri = 0, shooterd = 0;
+    public static double shooterp = .01, shooteri = 0, shooterd = 0;
 
-    public static double kV = .0004591836734, kS = .105;
+    public static double kV = .000400186335403727, kS = .001;
 
     public static double shooterVelocityTarget;
 

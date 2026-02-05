@@ -38,7 +38,7 @@ public class AutoAlignTest extends OpMode {
     @Override
     public void loop() {
         drive.update(gamepad1, gamepad2, 1);
-        vision.update(drive.botHeading);
+        vision.update();
 
         double angleToGoal = Math.toRadians(limelightMountAngleDegrees + Vision.tY);
         double distanceFromLimelightToTagInches = (goalHeightInches - limelightLensHeightInches) / Math.tan(angleToGoal);
@@ -60,7 +60,6 @@ public class AutoAlignTest extends OpMode {
 
         telemetry.addData("tx", Vision.tX);
         telemetry.addData("ty", Vision.tY);
-        telemetry.addData("tA", Vision.tA);
         telemetry.addData("botHeading", Math.toDegrees(drive.botHeading));
         telemetry.addData("Numerator", numerator);
         telemetry.addData("arcSingArgument", arcSinArgument);

@@ -40,7 +40,7 @@ public class Transport {
     //Shooter PID
     private PIDFController shooterController;
 
-    public double shooterp = 0.02, shooteri = 0, shooterd = 0, kV = .0004591836734, kS = .105;
+    public double shooterp = 0.01, shooteri = 0, shooterd = 0, kV = .000400186335403727, kS = .001;
     public double shooterpid;
     public double transferPower;
     //MOTOR POWER
@@ -56,8 +56,8 @@ public class Transport {
     public final double transferring = 1;
     public final double intaking = 1;
     public final double outtaking = -1;
-    public final double shootingLong = 700;
-    public final double shootingMed = 585;
+    public final double shootingLong = 750;
+    public final double shootingMed = 600;
     public final double shootingShort = 510;
     public final double emergencyEject = -300;
     //FSMs:
@@ -93,7 +93,7 @@ public class Transport {
         double angleToGoal = Math.toRadians(limelightMountAngleDegrees + Vision.tY);
         double distanceFromLimelightToTagInches = ((goalHeightInches - limelightLensHeightInches) / Math.tan(angleToGoal));
         double intercept = 460;
-        double velocity = intercept + (distanceFromLimelightToTagInches * 1.53);
+        double velocity = intercept + (distanceFromLimelightToTagInches * 1.6);
         double interVelocity = (int) (velocity / 10);
         double velocityTarget = interVelocity * 10;
         return velocityTarget;
@@ -163,8 +163,8 @@ public class Transport {
             shooterp = 0;
             kV = 0;
         } else {
-            shooterp = .02;
-            kV = .0004591836734;
+            shooterp = .01;
+            kV = .000400186335403727;
         }
 
         intake.setPower(intakePower);
@@ -240,16 +240,18 @@ public class Transport {
             led.setPosition(.63);
         } else if (isRed && Vision.tX > -6 && Vision.tX < -2.5 && Vision.validResult) {
             led.setPosition(.63);
-        } else {
+        } else if (!Vision.isConnected){
             led.setPosition(0);
+        } else {
+            led.setPosition(.3);
         }
 
         if (shooterVelocityTarget == 0) {
             shooterp = 0;
             kV = 0;
         } else {
-            shooterp = .02;
-            kV = .0004591836734;
+            shooterp = .01;
+            kV = .000400186335403727;
         }
 
         intake.setPower(intakePower);
@@ -440,11 +442,11 @@ public class Transport {
                     break;
                 case SHOOT:
                     if (shooterVelocityTarget <= 550) {
-                        fireTolerance = 100;
+                        fireTolerance = 150;
                     } else if (shooterVelocityTarget <= 660) {
-                        fireTolerance = 30;
+                        fireTolerance = 150;
                     } else {
-                        fireTolerance = 30;
+                        fireTolerance = 150;
                     }
                     if (gamepad1.left_bumper) {
                         ricoTransport = RicoTransport.INTAKE;
@@ -455,8 +457,8 @@ public class Transport {
                     }
                     if ((Math.abs(Drive.rx) < .1) && (inRange(shooterVelocity, shooterVelocityTarget) || gamepad1.dpad_left)) {
                         if (shooterVelocityTarget <= 660 && shooterVelocityTarget >= 560) {
-                            transferPower = transferring;
-                            intakePower = transferring;
+                            transferPower = intaking;
+                            intakePower = intaking;
                         } else {
                             transferPower = intaking;
                             intakePower = intaking;
@@ -476,7 +478,7 @@ public class Transport {
 
             if (gamepad1.square && ricoTransport != RicoTransport.HOME) {
                 ricoTransport = RicoTransport.HOME;
-                intakeToggle.value = false;
+//                intakeToggle.value = false;
             }
     }
 }

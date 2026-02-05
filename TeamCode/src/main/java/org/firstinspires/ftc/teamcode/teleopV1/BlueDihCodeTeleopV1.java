@@ -94,7 +94,7 @@ public class BlueDihCodeTeleopV1 extends OpMode {
         telemetry.addData("Vision Connected", Vision.isConnected);
         telemetry.addData("Vision Running", Vision.isRunning);
         telemetry.addData("IsNull", Vision.result == null);
-        telemetry.addData("IsValid", Vision.result.isValid());
+//        telemetry.addData("IsValid", Vision.result.isValid());
         telemetry.addData("ShooterP", transport.shooterp);
         telemetry.addData("Flywheel Velocity", Transport.shooterVelocity);
         telemetry.addData("Flywheel Target Velocity", Transport.shooterVelocityTarget);
