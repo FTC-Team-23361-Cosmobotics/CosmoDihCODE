@@ -29,13 +29,13 @@ public class RedGoalFifteenAuto extends OpMode {
 
 
     /** POSE COORDINATES **/
-    public static double hpX = 134, hpY = 8.25, hpHeading = Math.toRadians(180);
-    public static double spikeX = 128, highSpikeY = 84, midSpikeY = 60, lowSpikeY = 36;
+    public static double hpX = 136, hpY = 12, hpHeading = Math.toRadians(90);
     public static double startX = 126.20757825370676, startY = 119.32784184514004, startHeading = Math.toRadians(36);
-    public static double scoreX = 84, scoreY = 84, scoreHeading = Math.toRadians(45);
+    public static double spikeX = 119, highSpikeY = 83, midSpikeY = 58, lowSpikeY = 34;
+    public static double scoreX = 88, scoreY = 88, scoreMedX = 88, scoreMedY = 88, scoreHeading = Math.toRadians(45);
 
-    public static double parkX = 80, parkY = 98, parkHeading = Math.toRadians(45);
-    public static double gateX = 130, gateY = 64, gateHeading = Math.toRadians(90);
+    public static double parkX = 90, parkY = 104, parkHeading = Math.toRadians(45);
+    public static double gateX = 127, gateY = 66, gateHeading = Math.toRadians(90);
 
     /** START, SCORE, GATE, AND PARK POSES **/
     private final Pose startPose = new Pose(startX, startY, startHeading); // Start Pose of our robot.
@@ -51,10 +51,12 @@ public class RedGoalFifteenAuto extends OpMode {
     private final Pose lowSpikeControlPtHighPose = new Pose(85, 70);
     private final Pose lowSpikeControlPtLowPose = new Pose(85, lowSpikeY);
 
+    private final Pose hpControlPose = new Pose(hpX-3, 74);
+
     /** SPIKE POSES **/
     private final Pose highSpikePose = new Pose(spikeX, highSpikeY, Math.toRadians(180)); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose midSpikePose = new Pose(spikeX + 7, midSpikeY, Math.toRadians(180)); // Middle (Second Set) of Artifacts from the Spike Mark.
-    private final Pose lowSpikePose = new Pose(spikeX + 7, lowSpikeY, Math.toRadians(180)); // Lowest (Third Set) of Artifacts from the Spike Mark.
+    private final Pose midSpikePose = new Pose(spikeX + 8, midSpikeY, Math.toRadians(180)); // Middle (Second Set) of Artifacts from the Spike Mark.
+    private final Pose lowSpikePose = new Pose(spikeX + 8, lowSpikeY, Math.toRadians(180)); // Lowest (Third Set) of Artifacts from the Spike Mark.
     private final Pose hpPose = new Pose(hpX, hpY, hpHeading);
 
     /** PATH CHAINS **/
@@ -63,7 +65,7 @@ public class RedGoalFifteenAuto extends OpMode {
     public void buildPaths() {
         scorePreload = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, scorePose))
-                .setLinearHeadingInterpolation(startHeading, scoreHeading)
+                .setLinearHeadingInterpolation(startHeading, scoreHeading, .8)
                 .build();
 
         grabPPG = follower.pathBuilder()
@@ -73,13 +75,12 @@ public class RedGoalFifteenAuto extends OpMode {
 
         scorePPG = follower.pathBuilder()
                 .addPath(new BezierLine(highSpikePose, scorePose))
-                .setLinearHeadingInterpolation(highSpikePose.getHeading(), scoreHeading)
+                .setLinearHeadingInterpolation(highSpikePose.getHeading(), scoreHeading, .4)
                 .build();
 
         grabPGP = follower.pathBuilder()
                 .addPath(new BezierCurve(scorePose, midSpikeControlPtPose, midSpikePose))
-                .setTangentHeadingInterpolation()
-                .setReversed()
+                .setLinearHeadingInterpolation(scoreHeading, midSpikePose.getHeading(), .5)
                 .build();
 
         tapGate = follower.pathBuilder()
@@ -89,27 +90,27 @@ public class RedGoalFifteenAuto extends OpMode {
 
         scorePGP = follower.pathBuilder()
                 .addPath(new BezierLine(gatePose, scorePose))
-                .setLinearHeadingInterpolation(gateHeading, scoreHeading)
+                .setLinearHeadingInterpolation(gateHeading, scoreHeading, .5)
                 .build();
 
         grabGPP = follower.pathBuilder()
                 .addPath(new BezierCurve(scorePose, lowSpikeControlPtHighPose, lowSpikeControlPtLowPose, lowSpikePose))
-                .setLinearHeadingInterpolation(scoreHeading, lowSpikePose.getHeading())
+                .setLinearHeadingInterpolation(scoreHeading, lowSpikePose.getHeading(), .8)
                 .build();
 
         scoreGPP = follower.pathBuilder()
                 .addPath(new BezierLine(lowSpikePose, scorePose))
-                .setLinearHeadingInterpolation(lowSpikePose.getHeading(), scoreHeading)
+                .setLinearHeadingInterpolation(lowSpikePose.getHeading(), scoreHeading, .8)
                 .build();
 
         grabHP = follower.pathBuilder()
-                .addPath(new BezierLine(scorePose, hpPose))
-                .setLinearHeadingInterpolation(scoreHeading, hpPose.getHeading())
+                .addPath(new BezierCurve(scorePose, hpControlPose, hpPose))
+                .setLinearHeadingInterpolation(scoreHeading, hpPose.getHeading(), .8)
                 .build();
 
         scoreHP = follower.pathBuilder()
-                .addPath(new BezierLine(hpPose, scorePose))
-                .setLinearHeadingInterpolation(hpPose.getHeading(), scoreHeading)
+                .addPath(new BezierCurve(hpPose, hpControlPose, scorePose))
+                .setLinearHeadingInterpolation(hpPose.getHeading(), scoreHeading, .8)
                 .build();
 
         leaveZone = follower.pathBuilder()
@@ -118,8 +119,9 @@ public class RedGoalFifteenAuto extends OpMode {
                 .build();
     }
 
-    private final double shootBuffer = .35;
-    private final double shootWait = shootBuffer + 1.5;
+    private final double shootBuffer = .75;
+    private final double shootWait = shootBuffer + .75;
+    private final double shootPreloadWait = shootWait + .75;
     private final double intakeWait = .25;
     private final double tapWait = .75;
 
@@ -141,7 +143,7 @@ public class RedGoalFifteenAuto extends OpMode {
                 } else {
                     transport.ricoTransport = Transport.RicoTransport.POWER_SHOOTER_SHORT;
                 }
-                if (pathTimer.getElapsedTimeSeconds() > shootWait) {
+                if (pathTimer.getElapsedTimeSeconds() > shootPreloadWait) {
                     transport.ricoTransport = Transport.RicoTransport.INTAKE;
                     follower.followPath(grabPPG,true);
                     setPathState(3);

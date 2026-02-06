@@ -56,7 +56,7 @@ public class Transport {
     public final double transferring = 1;
     public final double intaking = 1;
     public final double outtaking = -1;
-    public final double shootingLong = 750;
+    public final double shootingLong = 800;
     public final double shootingMed = 600;
     public final double shootingShort = 510;
     public final double emergencyEject = -300;
@@ -92,8 +92,8 @@ public class Transport {
     public double calcVelocity() {
         double angleToGoal = Math.toRadians(limelightMountAngleDegrees + Vision.tY);
         double distanceFromLimelightToTagInches = ((goalHeightInches - limelightLensHeightInches) / Math.tan(angleToGoal));
-        double intercept = 460;
-        double velocity = intercept + (distanceFromLimelightToTagInches * 1.6);
+        double intercept = 450;
+        double velocity = intercept + (distanceFromLimelightToTagInches * 1.62);
         double interVelocity = (int) (velocity / 10);
         double velocityTarget = interVelocity * 10;
         return velocityTarget;
@@ -102,7 +102,7 @@ public class Transport {
     public double calcVelocityLong() {
         double angleToGoal = Math.toRadians(limelightMountAngleDegrees + Vision.tY);
         double distanceFromLimelightToTagInches = ((goalHeightInches - limelightLensHeightInches) / Math.tan(angleToGoal));
-        double intercept = 510;
+        double intercept = 560;
         double velocity = intercept + (distanceFromLimelightToTagInches * 1.56);
         double interVelocity = (int) (velocity / 10);
         double velocityTarget = interVelocity * 10;
@@ -163,7 +163,7 @@ public class Transport {
             shooterp = 0;
             kV = 0;
         } else {
-            shooterp = .01;
+            shooterp = .025;
             kV = .000400186335403727;
         }
 
@@ -194,8 +194,8 @@ public class Transport {
                 transferPower = outtaking * .25;
                 break;
             case POWER_SHOOTER_SHORT:
-                intakePower = .75;
-                shooterVelocityTarget = 480;
+                intakePower = 1;
+                shooterVelocityTarget = 560;
                 transferPower = -.25;
                 fireTolerance = 30;
                 break;
@@ -213,11 +213,11 @@ public class Transport {
                 break;
             case SHOOT:
                 if (shooterVelocityTarget <= 550) {
-                    fireTolerance = 100;
+                    fireTolerance = 150;
                 } else if (shooterVelocityTarget <= 660) {
-                    fireTolerance = 30;
+                    fireTolerance = 150;
                 } else {
-                    fireTolerance = 30;
+                    fireTolerance = 100;
                 }
                 if (shooterVelocityTarget >= 660 || shooterVelocityTarget <= 540) {
                     transferPower = intaking;
@@ -250,7 +250,7 @@ public class Transport {
             shooterp = 0;
             kV = 0;
         } else {
-            shooterp = .01;
+            shooterp = .025;
             kV = .000400186335403727;
         }
 
@@ -446,7 +446,7 @@ public class Transport {
                     } else if (shooterVelocityTarget <= 660) {
                         fireTolerance = 150;
                     } else {
-                        fireTolerance = 150;
+                        fireTolerance = 100;
                     }
                     if (gamepad1.left_bumper) {
                         ricoTransport = RicoTransport.INTAKE;
@@ -465,7 +465,7 @@ public class Transport {
                         }
                     } else {
                         if (shooterVelocityTarget >= 660) {
-                            transferPower = outtaking * .25; //TODO: maybe dormant?
+                            transferPower = dormant; //TODO: maybe dormant?
                         } else {
                             transferPower = dormant;
                         }
